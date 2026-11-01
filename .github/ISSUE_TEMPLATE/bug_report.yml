@@ -1,0 +1,16 @@
+name: Bug report
+description: Report a reproducible problem without sensitive information.
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Never include keys, seed phrases, signed payloads, or private user data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

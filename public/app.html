@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duskmoth App | Solana Wallet &amp; Privacy Tools</title>
+<meta name="description" content="Connect your Solana wallet to Duskmoth for mainnet balances, wallet privacy insights, and sanctions checks. Explore available private transfer tools.">
+<meta name="theme-color" content="#030303">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duskmoth">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://duskmoth.xyz/app">
+<meta property="og:title" content="Duskmoth App | Solana Wallet &amp; Privacy Tools">
+<meta property="og:description" content="Connect your Solana wallet to Duskmoth for mainnet balances, wallet privacy insights, and sanctions checks. Explore available private transfer tools.">
+<meta property="og:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta property="og:image:secure_url" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duskmoth wordmark on a dark background framed by vines, flowers, and moths.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@duskmoth_app">
+<meta name="twitter:creator" content="@duskmoth_app">
+<meta name="twitter:title" content="Duskmoth App | Solana Wallet &amp; Privacy Tools">
+<meta name="twitter:description" content="Connect your Solana wallet to Duskmoth for mainnet balances, wallet privacy insights, and sanctions checks. Explore available private transfer tools.">
+<meta name="twitter:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta name="twitter:image:alt" content="Duskmoth wordmark on a dark background framed by vines, flowers, and moths.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cedarville+Cursive&family=Inter+Tight:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=wallet-session">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<script>document.documentElement.classList.remove('no-js');</script>
+</head>
+<body class="app-body">
+<canvas id="organic" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="pill left" href="/">Home</a>
+  <a class="emblem" href="/" aria-label="Duskmoth home" data-emblem></a>
+  <div class="right">
+    <button class="pill" type="button" data-wallet-pill>Connect wallet</button>
+    <button class="pill wallet-disconnect" type="button" data-wallet-disconnect hidden>Disconnect</button>
+    <button class="pill hide-sm" type="button" data-menu-open aria-expanded="false" aria-controls="menu">Menu</button>
+  </div>
+</header>
+
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
+  <button class="pill close" type="button" data-menu-close>Close</button>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/#how">How it works</a>
+    <a href="/#principles">Principles</a>
+    <a href="/app">App</a>
+    <a href="/docs">Docs</a>
+  </nav>
+  <p class="foot micro mute">Send · Shield · Score</p>
+</div>
+
+<main class="app">
+  <!-- CHAT -->
+  <section class="panel chat show" data-pane="chat" aria-label="Chat">
+    <div class="panel-head">
+      <h2>Duskmoth</h2>
+      <span class="badge" data-mode-badge><i></i><span>Connecting</span></span>
+    </div>
+    <div class="feed" data-feed aria-live="polite"></div>
+    <div class="chips" data-chips></div>
+    <form class="composer" data-composer>
+      <label class="sr-only" for="say">Message Duskmoth</label>
+      <textarea id="say" rows="1" placeholder="Send 1 SOL to … privately" maxlength="500" autocomplete="off"></textarea>
+      <button class="send-btn" type="submit" aria-label="Send message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+  </section>
+
+  <div class="side-col">
+    <!-- WALLET -->
+    <section class="panel" data-pane="wallet" aria-label="Wallet">
+      <div class="panel-head"><h2>Wallet</h2><span class="micro mute">Keys stay in your wallet</span></div>
+      <div class="wallet-body" data-wallet></div>
+    </section>
+    <!-- SCORE -->
+    <section class="panel" id="score" data-pane="score" aria-label="Privacy score">
+      <div class="panel-head"><h2>Privacy score</h2><span class="micro mute" data-score-source></span></div>
+      <div class="score-body" data-score></div>
+    </section>
+
+  </div>
+</main>
+
+<nav class="app-tabs" aria-label="App sections" data-app-tabs>
+  <button type="button" class="on" data-to="chat">Chat</button>
+  <button type="button" data-to="score">Score</button>
+  <button type="button" data-to="wallet">Wallet</button>
+</nav>
+
+<div class="modal" data-modal role="dialog" aria-modal="true" aria-label="Share your score">
+  <div class="sheet glass">
+    <div data-modal-body></div>
+    <div class="actions">
+      <button class="btn primary" type="button" data-share-x>Post on X</button>
+      <button class="btn" type="button" data-share-copy>Copy text</button>
+      <a class="btn" data-share-dl download="duskmoth-score.png" style="display:inline-flex;align-items:center;text-decoration:none">Download</a>
+      <button class="btn" type="button" data-modal-close>Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/vendor/gsap.min.js"></script>
+<script type="module" src="assets/js/app.js?mode=real"></script>
+</body>
+</html>

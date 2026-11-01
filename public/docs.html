@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duskmoth Docs | Solana Privacy, Screening &amp; API</title>
+<meta name="description" content="How Duskmoth works on Solana mainnet: private sends through Privacy Cash, sanctions screening, the privacy score, the API and self-hosting.">
+<meta name="theme-color" content="#030303">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duskmoth">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://duskmoth.xyz/docs">
+<meta property="og:title" content="Duskmoth Docs | Solana Privacy, Screening &amp; API">
+<meta property="og:description" content="How Duskmoth works on Solana mainnet: private sends through Privacy Cash, sanctions screening, the privacy score, the API and self-hosting.">
+<meta property="og:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta property="og:image:secure_url" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duskmoth wordmark on a dark background framed by vines, flowers, and moths.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@duskmoth_app">
+<meta name="twitter:creator" content="@duskmoth_app">
+<meta name="twitter:title" content="Duskmoth Docs | Solana Privacy, Screening &amp; API">
+<meta name="twitter:description" content="How Duskmoth works on Solana mainnet: private sends through Privacy Cash, sanctions screening, the privacy score, the API and self-hosting.">
+<meta name="twitter:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta name="twitter:image:alt" content="Duskmoth wordmark on a dark background framed by vines, flowers, and moths.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cedarville+Cursive&family=Inter+Tight:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<script>document.documentElement.classList.remove('no-js');</script>
+</head>
+<body class="docs-body" id="top">
+<canvas id="organic" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="pill left" href="/">Home</a>
+  <a class="emblem" href="/" aria-label="Duskmoth home" data-emblem></a>
+  <div class="right">
+    <a class="pill hide-sm" href="/app">Open app</a>
+    <button class="pill" type="button" data-menu-open aria-expanded="false" aria-controls="menu">Menu</button>
+  </div>
+</header>
+
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
+  <button class="pill close" type="button" data-menu-close>Close</button>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/#manifesto">Field guide</a>
+    <a href="/docs">Docs</a>
+    <a href="/app">Open app</a>
+  </nav>
+  <p class="foot micro mute">Send · Shield · Score</p>
+</div>
+
+<div class="docs">
+  <aside class="docs-nav" aria-label="Documentation">
+    <p class="docs-nav-title">Docs</p>
+    <nav data-docs-nav>
+      <p class="grp">Start</p>
+      <a href="#overview">Overview</a>
+      <a href="#quickstart">Quickstart</a>
+      <a href="#how-it-works">How a private send works</a>
+      <p class="grp">Mainnet</p>
+      <a href="#mainnet">Network and addresses</a>
+      <a href="#wallet">Wallet activity</a>
+      <a href="#fees">Fees and limits</a>
+      <a href="#commands">What you can say</a>
+      <a href="#screening">Sanctions screening</a>
+      <a href="#score">Privacy score</a>
+      <p class="grp">Build</p>
+      <a href="#api">API reference</a>
+      <a href="#self-host">Self-host on mainnet</a>
+      <a href="#security">Security model</a>
+      <a href="#limits">Honest limits</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </aside>
+
+  <main class="docs-main">
+    <header class="docs-hero">
+      <p class="kicker">Documentation · Solana mainnet-beta</p>
+      <h1>Duskmoth docs</h1>
+      <p class="lead-doc">Everything about how Duskmoth moves SOL and USDC privately on Solana mainnet: the contracts it talks to, what it costs, what it checks, and how to run it yourself.</p>
+      <div class="net-badge"><i></i> Network: <b>mainnet-beta</b> · No devnet or testnet deployment</div>
+    </header>
+
+    <!-- OVERVIEW -->
+    <section id="overview" class="doc">
+      <h2>Overview</h2>
+      <p>Duskmoth is a chat interface for private transfers on Solana. You type what you want in plain words, Duskmoth shows a readable preview, and your own wallet signs. Under the hood it uses the <b>Privacy Cash</b> shielded pool on mainnet, so the recipient gets paid without an on-chain link back to your wallet.</p>
+      <div class="cards3">
+        <div class="dcard"><p class="kicker">Send</p><p>Pay any Solana address in SOL or USDC without exposing your main wallet.</p></div>
+        <div class="dcard"><p class="kicker">Shield</p><p>Park funds in your private balance now, send from it later.</p></div>
+        <div class="dcard"><p class="kicker">Score</p><p>See how much your public wallet reveals, with plain fixes.</p></div>
+      </div>
+      <p class="callout">Duskmoth is <b>non-custodial</b>. It never holds keys or funds, and the AI can only propose a transaction. Every move needs your wallet's signature.</p>
+    </section>
+
+    <!-- QUICKSTART -->
+    <section id="quickstart" class="doc">
+      <h2>Quickstart</h2>
+      <ol class="steps">
+        <li><b>Open the app</b> and connect Phantom, Solflare or Backpack. Your wallet must be on Solana mainnet.</li>
+        <li><b>Sign once to unlock your private balance.</b> Your wallet asks you to sign the message <code>Privacy Money account sign in</code>. This is free, moves nothing, and lets your browser derive the key that encrypts your private notes.</li>
+        <li><b>Say what you want</b>, for example <code>send 0.5 SOL to 7xKp…sMn privately</code>.</li>
+        <li><b>Read the preview</b>: amount, fees, what the recipient receives, privacy strength, and the screening result for both addresses.</li>
+        <li><b>Confirm and sign.</b> Your browser builds a zero-knowledge proof, the deposit goes on-chain, and a relayer pays the recipient from the pool.</li>
+      </ol>
+      <p class="callout warn">Start with a small amount, such as 0.05 SOL, the first time you use it. Withdrawals have a flat fee, so very small sends are expensive (see <a href="#fees">Fees</a>).</p>
+    </section>
+
+    <!-- HOW -->
+    <section id="how-it-works" class="doc">
+      <h2>How a private send works</h2>
+      <div class="flow">
+        <div><span>1</span><b>Intent</b><p>Your sentence goes to <code>/api/intent</code>. Claude (or the built-in rule parser) proposes an action. The server re-checks the token, the amount, your limits, and that the recipient address appears exactly as you typed it.</p></div>
+        <div><span>2</span><b>Screen</b><p><code>/api/screen</code> checks valid supplied addresses using Scorechain sanctions lists. A match or an incomplete check blocks approval. This is not full AML risk screening. Transfers require your explicit confirmation and wallet approval.</p></div>
+        <div><span>3</span><b>Deposit</b><p>Your wallet signs a deposit into the Privacy Cash pool. A commitment is added to the pool's Merkle tree (depth 26), and an encrypted note that only you can open is stored with it.</p></div>
+        <div><span>4</span><b>Prove</b><p>Your browser generates a Groth16 proof (circuit <code>transaction2</code>) showing you own an unspent note, without revealing which one.</p></div>
+        <div><span>5</span><b>Relay</b><p>The proof goes to the Privacy Cash relayer, through this server's <code>/api/relayer</code> proxy. The relayer submits the withdrawal and pays the recipient. The relayer pays the network fee, so your wallet never touches the withdrawal transaction.</p></div>
+      </div>
+      <p>For <b>Shield now, send later</b>, steps 4 and 5 happen whenever you choose. The longer the gap and the rounder the amount, the more deposits yours blends into.</p>
+    </section>
+
+    <!-- MAINNET -->
+    <section id="mainnet" class="doc">
+      <h2>Network and addresses</h2>
+      <p>Duskmoth runs only on <b>Solana mainnet-beta</b>. All values below are the ones in the Privacy Cash SDK version Duskmoth ships (<code>privacycash@1.3.1</code>). Verify them on any explorer before you trust them.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Item</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Privacy Cash program</td><td><code class="addr" data-copy>9fhQBbumKEFuXtMBDw8AaQyAjCorLGJQiS3skWZdQyQD</code></td></tr>
+          <tr><td>Address lookup table</td><td><code class="addr" data-copy>HEN49U2ySJ85Vc78qprSW9y6mFDhs1NczRxyppNHjofe</code></td></tr>
+          <tr><td>Protocol fee recipient (SDK constant)</td><td><code class="addr" data-copy>97rSMQUukMDjA7PYErccyx7ZxbHvSDaeXp2ig5BwSrTf</code></td></tr>
+          <tr><td>USDC mint</td><td><code class="addr" data-copy>EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v</code></td></tr>
+          <tr><td>Relayer API</td><td><code data-copy>https://api3.privacycash.org</code></td></tr>
+          <tr><td>Merkle tree depth</td><td>26</td></tr>
+          <tr><td>ZK circuit</td><td><code>transaction2</code> (wasm + zkey, served by your Duskmoth host)</td></tr>
+          <tr><td>Default RPC</td><td><code>https://mainnet.helius-rpc.com</code> with a Helius key, otherwise <code>https://api.mainnet-beta.solana.com</code></td></tr>
+        </tbody>
+      </table></div>
+      <p class="mute-s">Explorer: <a href="https://solscan.io/account/9fhQBbumKEFuXtMBDw8AaQyAjCorLGJQiS3skWZdQyQD" target="_blank" rel="noopener">view the program on Solscan</a>.</p>
+    </section>
+
+    <!-- WALLET ACTIVITY -->
+    <section id="wallet" class="doc">
+      <h2>Wallet activity</h2>
+      <p>When you connect a wallet, the Wallet panel reads its public history straight from Solana mainnet, so you can see exactly what anyone with an explorer can see.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Shown</th><th>How it is measured</th></tr></thead>
+        <tbody>
+          <tr><td>Public SOL and USDC</td><td><code>getBalance</code> and your USDC token accounts</td></tr>
+          <tr><td>Shielded balance</td><td>Decrypted in your browser from your Privacy Cash notes after you sign in. Never sent to the server.</td></tr>
+          <tr><td>Txs, 30 days</td><td>Signatures in the last 30 days, out of the latest 100</td></tr>
+          <tr><td>Active days</td><td>Distinct days with at least one transaction in the last 30</td></tr>
+          <tr><td>Last active</td><td>Time of the most recent signature, plus recent failed transactions</td></tr>
+          <tr><td>Recent activity</td><td>The 10 latest transactions with SOL and USDC changes, each linked to Solscan</td></tr>
+        </tbody>
+      </table></div>
+      <p>Transactions that touch the Privacy Cash program are labelled <b>Shielded</b> or <b>Private payout</b> based on the sampled transaction data. Unavailable details are marked unavailable. There is no demo wallet or sample activity fallback.</p>
+    </section>
+
+    <!-- FEES -->
+    <section id="fees" class="doc">
+      <h2>Fees and limits</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>What</th><th>Cost</th><th>Paid to</th></tr></thead>
+        <tbody>
+          <tr><td>Deposit (shield)</td><td>0%</td><td>Only the normal Solana network fee</td></tr>
+          <tr><td>Withdrawal (send out of the pool)</td><td>0.35% of the amount</td><td>Privacy Cash protocol</td></tr>
+          <tr><td>Relayer rent fee per withdrawal</td><td>0.006 SOL for SOL withdrawals</td><td>Privacy Cash relayer</td></tr>
+          <tr><td>Duskmoth fee</td><td>None</td><td>Duskmoth adds nothing on top</td></tr>
+        </tbody>
+      </table></div>
+      <p>The relayer publishes its current rates at <code>https://api3.privacycash.org/config</code> (<code>withdraw_fee_rate</code>, <code>rent_fees</code>, <code>minimum_withdrawal</code>), and the SDK reads them at send time. The preview always shows the live numbers. Rent fees and minimums for SPL tokens such as USDC are set per token in that same config.</p>
+      <h3>Worked example</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>You send</th><th>Fees</th><th>Recipient gets</th><th>Effective cost</th></tr></thead>
+        <tbody>
+          <tr><td>0.1 SOL</td><td>0.00035 + 0.006 = 0.00635 SOL</td><td>0.09365 SOL</td><td>6.4%</td></tr>
+          <tr><td>1 SOL</td><td>0.0035 + 0.006 = 0.0095 SOL</td><td>0.9905 SOL</td><td>0.95%</td></tr>
+          <tr><td>5 SOL</td><td>0.0175 + 0.006 = 0.0235 SOL</td><td>4.9765 SOL</td><td>0.47%</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Duskmoth limits</h3>
+      <ul class="dl">
+        <li>Maximum per send: <b>5 SOL</b> or <b>500 USDC</b> by default. Hosts can change this with <code>MAX_SEND_SOL</code> and <code>MAX_SEND_USDC</code>.</li>
+        <li>Supported tokens in the app: <b>SOL</b> and <b>USDC</b>. The pool supports more SPL tokens, which may be added later.</li>
+        <li>The relayer enforces a minimum withdrawal per token (for SOL, currently 0.01 SOL).</li>
+      </ul>
+    </section>
+
+    <!-- COMMANDS -->
+    <section id="commands" class="doc">
+      <h2>What you can say</h2>
+      <p>Write in plain English. With a Claude key on the server, phrasing is flexible. Without one, a rule-based parser handles the patterns below.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Intent</th><th>Example</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>Private send</td><td><code>send 2 SOL to &lt;address&gt; privately</code></td><td>Shield and pay out right away</td></tr>
+          <tr><td>Send later</td><td><code>send 50 USDC to &lt;address&gt; later</code></td><td>Shield now, you choose when to pay out</td></tr>
+          <tr><td>Shield</td><td><code>shield 1 SOL</code></td><td>Move funds into your private balance</td></tr>
+          <tr><td>Private balance</td><td><code>what's my private balance?</code></td><td>Opens your shielded balance</td></tr>
+          <tr><td>Privacy score</td><td><code>check my privacy score</code></td><td>Opens the score for your connected wallet</td></tr>
+        </tbody>
+      </table></div>
+      <p class="callout">The recipient must be a full Solana address that you typed or pasted yourself. The server rejects any address the AI produced that is not in your message, word for word.</p>
+    </section>
+
+    <!-- SCREENING -->
+    <section id="screening" class="doc">
+      <h2>Sanctions screening</h2>
+      <p>Duskmoth checks the recipient and any supplied sender using Scorechain's sanctions-only API. Missing senders are not claimed as checked. These checks do not enable live transfers.</p>
+      <pre class="code" data-copy-block><code>GET https://sanctions.api.scorechain.com/v1/addresses/&lt;ADDRESS&gt;
+x-api-key: &lt;SCORECHAIN_API_KEY&gt;</code></pre>
+      <ul class="dl">
+        <li>Scorechain returns a boolean sanctions-list match, not a risk score.</li>
+        <li>A match blocks approval. A no-match result is not proof that funds are safe.</li>
+        <li><b>Fails closed</b>: invalid addresses, missing credentials, invalid provider responses, request limits, and network failures cannot pass.</li>
+        <li>The free service is limited to 100 lookups/hour and non-commercial use. Solana list completeness and public commercial eligibility still need confirmation.</li>
+      </ul>
+      <p>Automated match tests use clearly labelled provider fixtures. They are not evidence of a verified live sanctioned Solana address.</p>
+    </section>
+
+    <!-- SCORE -->
+    <section id="score" class="doc">
+      <h2>Privacy score</h2>
+      <p>The score reads what the public chain already says about a wallet, using the Helius Wallet API. To stop people from profiling other wallets, you must prove ownership first by signing this exact message (valid for 5 minutes, ed25519):</p>
+      <pre class="code" data-copy-block><code>Duskmoth: prove I own &lt;ADDRESS&gt; to see my privacy score. Timestamp &lt;UNIX_MS&gt;. This costs nothing and moves no funds.</code></pre>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Signal</th><th>Points</th><th>Source</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Funded straight from an exchange</td><td>−25</td><td><code>GET /v1/wallet/{w}/funded-by</code></td><td>Fund a fresh wallet from your private balance</td></tr>
+          <tr><td>Sends to exchange deposit addresses</td><td>−15</td><td><code>transfers</code> + <code>batch-identity</code></td><td>Use a separate wallet for exchange withdrawals</td></tr>
+          <tr><td>Linked .sol / public name</td><td>−15</td><td><code>GET /v1/wallet/{w}/identity</code></td><td>Keep the name on a small display wallet</td></tr>
+          <tr><td>Long, busy public history</td><td>−10</td><td><code>transfers</code></td><td>Split activity across wallets</td></tr>
+          <tr><td>Large balance visible to anyone</td><td>−10</td><td><code>balances</code></td><td>Shield idle funds</td></tr>
+          <tr><td>Has used a privacy pool</td><td>+10</td><td><code>transfers</code></td><td>None</td></tr>
+        </tbody>
+      </table></div>
+      <p>The score starts at 100 and is graded A to F. The share card shows only the score and grade, never the address or balance.</p>
+      <p class="callout warn">Helius serves <code>identity</code>, <code>batch-identity</code> and <code>funded-by</code> only on paid plans (free plans get <code>403</code>). On a free key, those signals are skipped.</p>
+    </section>
+
+    <!-- API -->
+    <section id="api" class="doc">
+      <h2>API reference</h2>
+      <p>The Duskmoth server is a small Express app. Base path <code>/api</code>, JSON in and out, rate limited per IP (about 40 requests per burst). Request bodies and addresses are never logged.</p>
+
+      <div class="endpoint"><p class="ep"><span class="m get">GET</span><code>/api/health</code></p><p>Liveness and which services are live.</p>
+      <pre class="code"><code>{ "ok": true, "mode": "production", "network": "mainnet-beta", "ai": "claude",
+  "screening": "scorechain", "screeningScope": "sanctions-only", "data": "helius", "liveSend": true, "demoWallet": false, "relayerProxy": true }</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m get">GET</span><code>/api/config</code></p><p>Which services are live on this host.</p>
+      <pre class="code"><code>{
+  "ai": "claude",            // or "rules"
+  "screening": "scorechain", // or "off"
+  "data": "helius",          // or "public-rpc"
+  "liveSend": true,          // user confirmation and wallet approval required
+  "limits": { "SOL": 5, "USDC": 500 }
+}</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/intent</code></p><p>Turn a sentence into a proposed action. The AI never signs.</p>
+      <pre class="code"><code>// request
+{ "message": "send 0.5 SOL to 7xKpQm3vHsT9wRb2eYcNf4LdJ8gUaZ5qXr6tPkW1sMn privately" }
+// response
+{
+  "reply": "Ready to send 0.5 SOL to 7xKp…1sMn without linking it to your wallet…",
+  "action": { "type": "send", "amount": 0.5, "token": "SOL",
+              "recipient": "7xKpQm3vHsT9wRb2eYcNf4LdJ8gUaZ5qXr6tPkW1sMn", "delay": "now" }
+}
+// action.type: "send" | "shield" | "balance" | "score" | "help", or action is null when more info is needed</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/screen</code></p><p>Screen both parties. Fails closed.</p>
+      <pre class="code"><code>// request
+{ "sender": "&lt;ADDRESS&gt;", "recipient": "&lt;ADDRESS&gt;" }
+// response
+ { "source": "scorechain", "scope": "sanctions-only", "allowed": true,
+   "sender": { "isSanctioned": false }, "recipient": { "isSanctioned": false } }
+// blocked: "allowed": false plus a "reason" string</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/score</code></p><p>Privacy score for a wallet you own. Needs the signed ownership message.</p>
+      <pre class="code"><code>// request
+{ "address": "&lt;ADDRESS&gt;", "ts": 1793414400000, "signature": "&lt;base58 ed25519&gt;" }
+// response
+{ "wallet": "7xKp…1sMn", "score": 62, "grade": "C", "source": "helius", "txCount": 418,
+  "signals": [ { "id": "cexFunded", "label": "Funded from an exchange", "impact": -25, "detected": true, "fix": "…" } ],
+  "summary": "Your wallet scores 62/100 (C). The biggest leaks: …",
+  "fixes": [ "…" ] }
+// 401 if the signature is missing, wrong or older than 5 minutes</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/activity</code></p><p>Public mainnet activity for a wallet: SOL and USDC balances, 30-day stats from the last 100 signatures, and the 10 most recent transactions classified as received, sent, shielded, private payout or app interaction. Reads only standard RPC methods (<code>getBalance</code>, <code>getTokenAccountsByOwner</code>, <code>getSignaturesForAddress</code>, <code>getTransaction</code>).</p>
+      <pre class="code"><code>// request
+{ "address": "&lt;ADDRESS&gt;" }
+// response
+{ "address": "…", "network": "mainnet-beta", "source": "helius-rpc",
+  "sol": 4.218, "usdc": 120.5,
+  "stats": { "sampled": 100, "last30d": 23, "activeDays30d": 9, "failed": 1,
+             "lastActive": 1793410000, "oldestSampled": 1781000000 },
+  "history": [ { "signature": "…", "time": 1793410000, "ok": true, "type": "receive",
+                 "sol": 0, "usdc": 25.5, "fee": 0 } ] }</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m get">GET</span><code>/api/card.svg?score=62&amp;grade=C</code></p><p>Shareable score card (1200×630 SVG). Contains no address.</p></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/rpc</code></p><p>Mainnet JSON-RPC proxy, so the Helius key never reaches the browser. Up to 10 calls per batch. Only these methods are allowed:</p>
+      <p class="mute-s"><code>getLatestBlockhash</code> <code>getAccountInfo</code> <code>getMultipleAccounts</code> <code>getBalance</code> <code>getTokenAccountBalance</code> <code>getTokenAccountsByOwner</code> <code>getSignatureStatuses</code> <code>getSignaturesForAddress</code> <code>getTransaction</code> <code>sendTransaction</code> <code>simulateTransaction</code> <code>getMinimumBalanceForRentExemption</code> <code>getSlot</code> <code>getBlockHeight</code> <code>getFeeForMessage</code> <code>getRecentPrioritizationFees</code></p></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/relayer/*</code></p><p>Pass-through to the official Privacy Cash relayer for the paths the SDK uses (<code>/config</code>, <code>/deposit</code>, <code>/withdraw</code>, <code>/utxos/*</code>, <code>/merkle/*</code>). Anything else returns 404. The user's IP is not forwarded.</p></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/waitlist</code></p><p>Unavailable (503) until durable storage is configured. No email is stored or reported as saved.</p></div>
+    </section>
+
+    <!-- SELF HOST -->
+    <section id="self-host" class="doc">
+      <h2>Self-host on mainnet</h2>
+      <p>Requirements: Node.js 20+ or Docker, and a domain with HTTPS (browser wallets will not sign on plain HTTP outside localhost). The release package already contains the ZK circuit and the pre-built proving module. Full steps are in <code>INSTALL.md</code>.</p>
+      <pre class="code" data-copy-block><code>cp .env.example .env      # fill in your keys and domain
+docker compose up -d --build
+docker compose exec duskmoth npm run check
+
+# or without Docker
+npm ci &amp;&amp; npm run build
+npm run check              # connectivity checks: mainnet RPC, relayer, Scorechain, Helius
+pm2 start ecosystem.config.cjs</code></pre>
+      <h3>Production environment</h3>
+      <pre class="code" data-copy-block><code>NODE_ENV=production
+PORT=8787
+PUBLIC_URL=https://duskmoth.xyz
+
+ENABLE_LIVE_SEND=true        # enable wallet-approved transfers; false is an operator kill switch
+MAX_SEND_SOL=1               # start low
+MAX_SEND_USDC=100
+RELAYER_PROXY=true           # browser → /api/relayer → official relayer
+RELAYER_URL=https://api3.privacycash.org
+
+SCORECHAIN_API_KEY=…         # sanctions-only checks
+HELIUS_API_KEY=…             # mainnet RPC + Wallet API
+ANTHROPIC_API_KEY=…          # optional
+ANTHROPIC_MODEL=claude-sonnet-5-5
+
+ALLOW_DEMO_WALLET=false
+ALLOW_UNSIGNED_SCORE=false</code></pre>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Variable</th><th>Required on mainnet</th><th>Without it (production)</th></tr></thead>
+        <tbody>
+          <tr><td><code>NODE_ENV=production</code></td><td>Yes</td><td>No demo behavior is available in any mode.</td></tr>
+          <tr><td><code>ENABLE_LIVE_SEND</code></td><td><code>true</code> for wallet-approved transfers</td><td>When false, the operator disables deposits and withdrawals. No simulation replaces them.</td></tr>
+          <tr><td><code>SCORECHAIN_API_KEY</code></td><td>For sanctions checks</td><td>Screening cannot pass without it; a configured key does not guarantee provider coverage or commercial eligibility.</td></tr>
+          <tr><td><code>HELIUS_API_KEY</code></td><td>Strongly recommended</td><td>Public RPC (rate limited), privacy score disabled</td></tr>
+          <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Optional</td><td>English rule parser</td></tr>
+          <tr><td><code>PUBLIC_URL</code></td><td>Yes</td><td>Share previews on X may not show the image</td></tr>
+        </tbody>
+      </table></div>
+      <p>In production Duskmoth never shows invented data: when a service is missing or down, the feature says so and stops. <code>GET /api/health</code> reports which services are live.</p>
+      <h3>Go-live checklist</h3>
+      <ul class="check">
+        <li><code>npm run check</code> ends with <b>All required checks passed</b>.</li>
+        <li><code>GET /api/health</code> shows <code>"mode": "production"</code>, <code>"screening": "scorechain"</code>, <code>"data": "helius"</code>, <code>"liveSend": true</code>, <code>"demoWallet": false</code>. Enabled does not mean a live-funds test has passed.</li>
+        <li>Send <b>0.05 SOL</b> to a second wallet you own. Confirm the deposit and the relayer withdrawal on Solscan, and confirm no direct link between the two wallets.</li>
+        <li>Obtain a provider-supported sanctioned Solana test case and verify it is blocked; do not assume an old Range example is sanctioned by Scorechain.</li>
+        <li>Lower <code>MAX_SEND_SOL</code> and <code>MAX_SEND_USDC</code> for your first days live.</li>
+        <li>Check that privacy tools are legal where you and your users are.</li>
+      </ul>
+    </section>
+
+    <!-- SECURITY -->
+    <section id="security" class="doc">
+      <h2>Security model</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Who</th><th>Can see</th><th>Cannot do</th></tr></thead>
+        <tbody>
+          <tr><td>Your wallet</td><td>Every transaction before signing</td><td>Not applicable: it holds your keys</td></tr>
+          <tr><td>Your browser</td><td>Your encryption key (derived from your sign-in signature), your notes, the ZK proof</td><td>Not applicable</td></tr>
+          <tr><td>Duskmoth server</td><td>Your sentence, the two addresses for screening, the address you score or view activity for</td><td>Sign, hold funds, see your private notes. It stores none of this.</td></tr>
+          <tr><td>Privacy Cash relayer</td><td>The withdrawal proof, recipient and amount</td><td>Link the withdrawal to your deposit</td></tr>
+          <tr><td>Anyone on the explorer</td><td>A deposit into the pool, and a withdrawal from the pool</td><td>Tell which deposit paid which recipient</td></tr>
+        </tbody>
+      </table></div>
+      <ul class="dl">
+        <li>API keys (Anthropic, Scorechain, Helius) live only on the server. The browser talks to Helius through <code>/api/rpc</code> with a method allowlist. Transaction submission is blocked while transfers are unavailable.</li>
+        <li>No request bodies or addresses are logged. The only thing written to disk is the waitlist email file.</li>
+        <li>Losing access to your wallet means losing access to your private notes too, because the encryption key is derived from your wallet's signature. Withdraw what you do not need to keep shielded.</li>
+      </ul>
+    </section>
+
+    <!-- LIMITS -->
+    <section id="limits" class="doc">
+      <h2>Honest limits</h2>
+      <ul class="dl">
+        <li><b>The anonymity set is what other people deposit.</b> If you deposit 3.217 SOL and someone receives 3.206 SOL a minute later, the amounts and timing can link you. Use round amounts and wait.</li>
+        <li><b>Privacy is not invisibility.</b> Your deposit is still visible as a deposit into the pool.</li>
+        <li><b>Third-party dependence.</b> Wallet features depend on Helius/RPC and sanctions checks depend on Scorechain. No failed service is replaced with invented data. Wallet-approved transfers depend on successful screening, current relayer fees, sufficient funds, proof generation and network confirmation. Provider coverage, commercial-use eligibility and live-funds verification are separate requirements.</li>
+        <li><b>The live send path is new.</b> Test it with small amounts on mainnet before relying on it.</li>
+        <li><b>Not legal or financial advice.</b> Privacy tools are restricted in some countries.</li>
+      </ul>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="doc">
+      <h2>FAQ</h2>
+      <details><summary>Is Duskmoth a mixer?</summary><p>No. It is a chat interface over a non-custodial zero-knowledge pool, with sanctions screening on both sides of every transfer. Duskmoth never takes custody of funds.</p></details>
+      <details><summary>Does it work on devnet?</summary><p>No. Privacy Cash and Duskmoth run on Solana mainnet-beta only. Test with small mainnet amounts instead.</p></details>
+      <details><summary>Why did my wallet ask me to sign "Privacy Money account sign in"?</summary><p>That signature derives the key that encrypts your private notes in the pool. It costs nothing and authorizes no transfer.</p></details>
+      <details><summary>Can I get my funds out if Duskmoth disappears?</summary><p>Yes. Your notes live on-chain in the Privacy Cash pool and are encrypted to your wallet. Any Privacy Cash client, including the official one, can withdraw them with the same wallet.</p></details>
+      <details><summary>Why is a 0.05 SOL send so expensive?</summary><p>The relayer charges a flat 0.006 SOL per withdrawal on top of 0.35%. On small amounts the flat part dominates.</p></details>
+      <details><summary>What is $DMOTH?</summary><p>The Duskmoth community token ticker. Duskmoth works without holding it, and no fees are paid in it.</p></details>
+    </section>
+
+    <footer class="docs-foot micro mute">
+      <p>Sources: Privacy Cash SDK <code>privacycash@1.3.1</code>, Privacy Cash relayer config, Scorechain Free Sanctions API docs, Helius Wallet API docs. Connectivity checks are not proof of production readiness.</p>
+      <p>Duskmoth never holds your keys or your funds. Not financial advice. Not available where privacy tools are prohibited.</p>
+    </footer>
+  </main>
+</div>
+
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/ScrollTrigger.min.js"></script>
+<script src="assets/vendor/lenis.min.js"></script>
+<script type="module">
+  import { initCommon, toast } from './assets/js/fx.js';
+  initCommon('docs');
+
+  // copy addresses and code blocks
+  const copy = async (text) => { try { await navigator.clipboard.writeText(text); toast('Copied'); } catch { toast('Copy failed'); } };
+  document.querySelectorAll('[data-copy]').forEach((el) => {
+    el.title = 'Click to copy'; el.tabIndex = 0;
+    el.addEventListener('click', () => copy(el.textContent.trim()));
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') copy(el.textContent.trim()); });
+  });
+  document.querySelectorAll('pre.code').forEach((pre) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'copy-btn'; b.textContent = 'Copy';
+    b.addEventListener('click', () => copy(pre.querySelector('code').innerText));
+    pre.appendChild(b);
+  });
+
+  // highlight the section in view
+  const links = [...document.querySelectorAll('[data-docs-nav] a')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      links.forEach((a) => a.classList.remove('on'));
+      const a = byId.get(e.target.id);
+      if (a) { a.classList.add('on'); a.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('section.doc').forEach((s) => io.observe(s));
+</script>
+</body>
+</html>

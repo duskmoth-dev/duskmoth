@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duskmoth | AI-Powered Privacy on Solana</title>
+<meta name="description" content="Explore Duskmoth, an AI-powered Solana app for wallet insights, sanctions checks, and private transfer workflows. Connect your wallet to get started.">
+<meta name="theme-color" content="#030303">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duskmoth">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://duskmoth.xyz/">
+<meta property="og:title" content="Duskmoth | AI-Powered Privacy on Solana">
+<meta property="og:description" content="Explore Duskmoth, an AI-powered Solana app for wallet insights, sanctions checks, and private transfer workflows. Connect your wallet to get started.">
+<meta property="og:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta property="og:image:secure_url" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duskmoth wordmark on a dark background framed by vines, flowers, and moths.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@duskmoth_app">
+<meta name="twitter:creator" content="@duskmoth_app">
+<meta name="twitter:title" content="Duskmoth | AI-Powered Privacy on Solana">
+<meta name="twitter:description" content="Explore Duskmoth, an AI-powered Solana app for wallet insights, sanctions checks, and private transfer workflows. Connect your wallet to get started.">
+<meta name="twitter:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta name="twitter:image:alt" content="Duskmoth wordmark on a dark background framed by vines, flowers, and moths.">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"Duskmoth","url":"https://duskmoth.xyz/","inLanguage":"en","image":"https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg","sameAs":["https://x.com/duskmoth_app","https://github.com/duskmoth-dev"]}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cedarville+Cursive&family=Inter+Tight:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<script>document.documentElement.classList.remove('no-js');</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="liquid" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence id="liquid-noise" type="fractalNoise" baseFrequency="0.008 0.02" numOctaves="2" seed="4" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<canvas id="organic" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="pill left" href="/app">Open app</a>
+  <a class="emblem" href="#top" aria-label="Duskmoth home" data-emblem></a>
+  <div class="right">
+    <a class="pill hide-sm" href="/app#score">Privacy score</a>
+    <button class="pill" type="button" data-menu-open aria-expanded="false" aria-controls="menu">Menu</button>
+  </div>
+</header>
+
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
+  <button class="pill close" type="button" data-menu-close>Close</button>
+  <nav>
+    <a href="#top">Home</a>
+    <a href="#how">How it works</a>
+    <a href="#principles">Principles</a>
+    <a href="#manifesto">Field guide</a>
+    <a href="/docs">Docs</a>
+    <a href="#portal">Join</a>
+    <a href="/app">Open app</a>
+  </nav>
+  <p class="foot micro mute">Send · Shield · Score</p>
+</div>
+
+<nav class="socials" aria-label="Social">
+  <a href="https://x.com/duskmoth_app" aria-label="X"><svg viewBox="0 0 24 24"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.3l-4.9-6.4L5.2 21H2.1l7.3-8.3L1.8 3h6.4l4.4 5.9L17.8 3zm-1.1 16.2h1.7L7.3 4.7H5.5l11.2 14.5z"/></svg></a>
+  <a href="https://github.com/duskmoth-dev" aria-label="GitHub"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.4 1.1 2.9.8.1-.7.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7 3.6 3.6 0 0 1 .1-2.7s.8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg></a>
+</nav>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero" aria-label="Duskmoth">
+    <div class="hero-inner">
+      <h1 class="chrome" data-hero><span class="w">Dusk</span><span class="w">moth</span></h1>
+      <p class="sub micro" data-hero-sub>An AI that moves your crypto after dark.<br>Private sends on Solana,<br>in one sentence.</p>
+      <p class="micro" role="status">Mainnet transfers require your confirmation and wallet approval. Sanctions checks are not a full risk assessment. No simulated transactions.</p>
+      <div class="cta" data-hero-sub>
+        <a class="pill solid" href="/app">Open app</a>
+        <a class="pill" href="/app#score">How loud is my wallet?</a>
+      </div>
+    </div>
+    <div class="scroll-hint micro mute" aria-hidden="true">Scroll<i></i></div>
+  </section>
+
+  <!-- STATEMENT -->
+  <section class="statement center" aria-label="Statement">
+    <p class="micro mute" data-reveal>Whisper</p>
+    <h2 class="big" data-lines>
+      <span class="line"><span>Every wallet talks.</span></span>
+      <span class="line"><span>Yours can</span></span>
+      <span class="line"><span>whisper.</span></span>
+    </h2>
+    <p class="lead micro" data-reveal>Public blockchains remember everything: who paid you, what you hold, where you cash out. Duskmoth gives you back the right to move quietly.</p>
+  </section>
+
+  <!-- SPECIMEN FLIPBOOK -->
+  <section class="specimen center" aria-label="Anonymity set">
+    <p class="micro mute" data-reveal>Anonymity set</p>
+    <button class="stage" type="button" data-specimen aria-label="Tap to catch one specimen, tap again to release">
+      <canvas aria-hidden="true"></canvas>
+    </button>
+    <p class="micro spec-label" data-spec-label aria-live="polite">Nº 0427 · Cicadamotha vesperis</p>
+    <h2 class="big" data-lines><span class="line"><span>One of thousands.</span></span></h2>
+    <p class="lead micro" data-reveal>Inside the shielded pool every deposit looks like every other. Watching it is like watching this: a new specimen every instant, and none of them is you.</p>
+    <p class="micro mute" data-spec-hint>Tap to catch one</p>
+  </section>
+
+  <!-- SWARM -->
+  <section class="swarm" id="how" aria-label="How Duskmoth sends">
+    <div class="sticky">
+      <canvas id="swarm" aria-hidden="true"></canvas>
+      <div class="glass micro" data-swarm-card>
+        <p style="margin:0 0 10px">Type one sentence. Check the preview. Sign once.</p>
+        <p style="margin:0">Your funds slip into a shielded pool and come out the other side to your recipient. The link between you two disappears into the swarm.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DUSK FIELD -->
+  <section class="field" aria-label="Privacy score">
+    <div class="wrap">
+      <div class="card" data-field>
+        <div class="field-photo" id="field" aria-hidden="true">
+          <img class="bg" src="assets/img/f/field.webp" alt="" loading="lazy" decoding="async">
+          <img class="fg" src="assets/img/f/field.webp" alt="" loading="lazy" decoding="async">
+        </div>
+        <div class="glass micro">
+          <p style="margin:0 0 10px">Your wallet is a glass house. Anyone with an explorer can read your balance, your exchange and your habits.</p>
+          <p style="margin:0">Find out how exposed you are in ten seconds.</p>
+          <a class="pill solid" href="/app#score">Get my privacy score</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="services center" aria-label="What Duskmoth does">
+    <h2 class="big" data-lines><span class="line"><span>What it does</span></span></h2>
+    <div class="cols" data-reveal>
+      <div class="col">
+        <h3>Private send</h3>
+        <div class="ticker"><ul>
+          <li>Chat to send</li><li>SOL and USDC</li><li>Shield now, send later</li><li>Round-amount coaching</li><li>Sanctions screening</li><li>One signature</li>
+          <li>Chat to send</li><li>SOL and USDC</li><li>Shield now, send later</li><li>Round-amount coaching</li><li>Sanctions screening</li><li>One signature</li>
+        </ul></div>
+      </div>
+      <div class="col" style="text-align:left">
+        <h3>Privacy score</h3>
+        <div class="ticker"><ul>
+          <li>Exposure 0 to 100</li><li>Exchange links</li><li>Name and domain leaks</li><li>Balance visibility</li><li>Plain-language fixes</li><li>Shareable card</li>
+          <li>Exposure 0 to 100</li><li>Exchange links</li><li>Name and domain leaks</li><li>Balance visibility</li><li>Plain-language fixes</li><li>Shareable card</li>
+        </ul></div>
+      </div>
+    </div>
+    <p class="triad micro" data-triad><span class="on">Send,</span> <span>Shield,</span> <span>Score</span></p>
+  </section>
+
+  <!-- RAILS -->
+  <section class="rails" aria-label="Built with">
+    <div class="names" data-names>
+      <p>Privacy Cash</p><small>Zero-knowledge shielded pool</small>
+      <p>Range</p><small>Real-time risk and sanctions screening</small>
+      <p>Helius</p><small>Wallet data and RPC</small>
+      <p>Claude</p><small>Understands what you mean, never signs</small>
+      <p>Solana</p><small>Settles in seconds, for cents</small>
+    </div>
+    <p class="micro mute center" style="margin-top:12vh">Works with the wallet you already use</p>
+    <div class="wordmarks" data-reveal>
+      <span class="wallet"><img src="assets/img/wallets/phantom.webp" alt="" width="160" height="160" loading="lazy">Phantom</span>
+      <span class="wallet"><img src="assets/img/wallets/solflare.webp" alt="" width="160" height="160" loading="lazy">Solflare</span>
+      <span class="wallet"><img src="assets/img/wallets/backpack.webp" alt="" width="160" height="160" loading="lazy">Backpack</span>
+    </div>
+  </section>
+
+  <!-- POSTCARDS -->
+  <section class="cards center" aria-label="Three steps">
+    <p class="micro mute" data-reveal>Three steps, no jargon</p>
+    <div class="stack" data-stack>
+      <article class="postcard" data-hover>
+        <div class="art"><img src="assets/img/f/postcard-3.webp" alt="" width="960" height="640" loading="lazy" decoding="async"></div>
+        <div class="cap">
+          <div><p class="num">Step 03</p><p class="script">Sign it</p></div>
+          <p class="micro">Approve once in your wallet. Duskmoth shields, proves and relays. Your recipient gets the funds, the explorer gets nothing.</p>
+        </div>
+        <img class="stamp" src="assets/img/f/stamp.webp" alt="" width="240" height="246" loading="lazy">
+      </article>
+      <article class="postcard" data-hover>
+        <div class="art"><img src="assets/img/f/postcard-2.webp" alt="" width="960" height="640" loading="lazy" decoding="async"></div>
+        <div class="cap">
+          <div><p class="num">Step 02</p><p class="script">Check it</p></div>
+          <p class="micro">See the amount, the fee and how strong your privacy is. Both addresses are screened for sanctions before anything moves.</p>
+        </div>
+        <img class="stamp" src="assets/img/f/stamp.webp" alt="" width="240" height="246" loading="lazy">
+      </article>
+      <article class="postcard" data-hover>
+        <div class="art"><img src="assets/img/f/postcard-1.webp" alt="" width="960" height="640" loading="lazy" decoding="async"></div>
+        <div class="cap">
+          <div><p class="num">Step 01</p><p class="script">Say it</p></div>
+          <p class="micro">"Send 2 SOL to Mira, privately." Plain words, any language. The AI turns it into a transaction you can read.</p>
+        </div>
+        <img class="stamp" src="assets/img/f/stamp.webp" alt="" width="240" height="246" loading="lazy">
+      </article>
+    </div>
+    <p class="micro mute" style="margin-top:4vh">Tap the cards</p>
+  </section>
+
+  <!-- PRINCIPLES -->
+  <section class="values center" id="principles" aria-label="Principles">
+    <h2 class="big" data-lines><span class="line"><span>Our principles</span></span></h2>
+    <p class="lead micro" data-reveal>Privacy for ordinary people, built so it cannot be turned into a laundromat.</p>
+    <div class="orbit" data-orbit></div>
+    <div class="value-name" aria-live="polite">
+      <p class="micro micro-strong" data-value-title></p>
+      <p class="script" data-value-script></p>
+      <p class="micro mute" data-value-text style="max-width:360px;margin:8px auto 0"></p>
+    </div>
+    <div class="dots" data-dots role="tablist" aria-label="Principles"></div>
+  </section>
+
+  <!-- MANIFESTO -->
+  <section class="manifesto guide" id="manifesto" aria-label="Field guide">
+    <p class="micro mute center" data-reveal>The field guide</p>
+    <h2 class="big center" data-lines><span class="line"><span>Every feature, page by page</span></span></h2>
+    <div class="book-wrap">
+      <div class="book" data-book aria-roledescription="book"></div>
+    </div>
+    <div class="book-nav micro">
+      <button type="button" class="pill" data-book-prev aria-label="Previous page">&larr; Back</button>
+      <span class="mute" data-book-count aria-live="polite"></span>
+      <button type="button" class="pill" data-book-next aria-label="Next page">Turn &rarr;</button>
+    </div>
+  </section>
+
+  <!-- PORTAL -->
+  <section class="portal" id="portal" aria-label="Join">
+    <div class="box" data-reveal>
+      <p class="script">This is a portal. Join the swarm before dusk.</p>
+      <p class="micro">Email signup is unavailable. No email addresses are being collected.</p>
+      <a class="pill" href="/app">Open app</a>
+      <p class="form-msg micro" data-form-msg role="status"></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="big-emblem" data-emblem></div>
+  <p class="micro">Duskmoth © 2026 · $DMOTH · <a href="/docs">Docs</a></p>
+  <p class="micro mute" style="max-width:520px;margin:10px auto 0">Duskmoth never holds your keys or your funds. Transfers are screened for sanctions. Not financial advice. Not available where privacy tools are prohibited.</p>
+</footer>
+
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/ScrollTrigger.min.js"></script>
+<script src="assets/vendor/lenis.min.js"></script>
+<script type="module" src="assets/js/landing.js?mode=real"></script>
+</body>
+</html>
