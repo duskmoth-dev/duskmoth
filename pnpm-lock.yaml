@@ -49,8 +49,8 @@ importers:
         specifier: 1.0.22
         version: 1.0.22
       gsap:
-        specifier: 3.12.5
-        version: 3.12.5
+        specifier: 3.15.1
+        version: 3.15.1
       lenis:
         specifier: 1.1.13
         version: 1.1.13
@@ -876,8 +876,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  gsap@3.12.5:
-    resolution: {integrity: sha512-srBfnk4n+Oe/ZnMIOXt3gT605BX9x5+rh/prT2F1SsNJsU1XuMiP0E2aptW481OnonOGACZWBqseH5Z7csHxhQ==}
+  gsap@3.15.1:
+    resolution: {integrity: sha512-63yjWRFWj3QRP1UOuD8kcidCcy3nxb1mMRpwHr/xJRvPfm9GtWOXFAYUiL0ro1fgPq2nY53LR+98pAgy9BumBg==}
 
   has-property-descriptors@1.0.2:
     resolution: {integrity: sha512-55JNKuIW+vq4Ke1BjOTjM2YctQIvCT7GFzHwmfZPGo5wnrgkid0YQtnAleFSqumZm4az3n2BS+erby5ipJdgrg==}
@@ -2623,7 +2623,7 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  gsap@3.12.5: {}
+  gsap@3.15.1: {}
 
   has-property-descriptors@1.0.2:
     dependencies:
