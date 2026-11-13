@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Integration questions
+    url: https://github.com/duskmoth-dev/duskmoth-sdk/discussions
+    about: Discuss integration and development without disclosing private payment data.
+  - name: Security reporting
+    url: https://github.com/duskmoth-dev/duskmoth/security/policy
+    about: Report vulnerabilities privately using the security policy.

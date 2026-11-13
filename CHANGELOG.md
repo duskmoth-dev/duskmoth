@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — developer security automation
+
+- Add pull-request dependency review, weekly Dependabot proposals, and OpenSSF Scorecard.
+- Pin updated CI actions to verified upstream commits.
+- Route developer questions to SDK Discussions and retain private security reporting.
+- No hosted deployment, transaction behavior, pass cost, or mainnet feature flag changes.
+
 ## 0.2.0
 
 - First public application-source candidate, refreshed from the current app.
