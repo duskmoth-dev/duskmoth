@@ -28,7 +28,7 @@
     "@magicblock-labs/ephemeral-rollups-sdk": "0.17.3",
     "@solana/web3.js": "1.99.0",
     "bs58": "6.0.0",
-    "dotenv": "18.0.9",
+    "dotenv": "18.0.10",
     "express": "5.3.0",
     "fastestsmallesttextencoderdecoder": "1.0.22",
     "gsap": "3.12.5",
