@@ -1,5 +1,15 @@
 # Contributing to Duskmoth
 
+## Developer support and integration
+
+Use [SDK Discussions](https://github.com/duskmoth-dev/duskmoth-sdk/discussions) for developer questions.
+Runnable, unfunded integration examples are in the
+[SDK examples](https://github.com/duskmoth-dev/duskmoth-sdk/tree/main/examples).
+Do not post wallet proofs, private payment lists, request bodies, or real user data.
+Dependency review runs on pull requests and Dependabot proposes dependency/action updates;
+updates require review and are not automatically merged.
+OpenSSF Scorecard checks repository practices, not anonymity or funded payment correctness.
+
 Thank you for contributing. Contact: hello@duskmoth.xyz.
 
 1. Open an issue describing a reproducible bug or a narrowly scoped proposal.
