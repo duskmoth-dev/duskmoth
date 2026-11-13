@@ -101,6 +101,27 @@ test('malformed provider data fails closed', async () => {
   }
 });
 
+test('one transient retry can recover, but credentials, quota, malformed results and matches are not retried', async () => {
+  for (const status of [401, 403, 429, 400, 200]) {
+    let calls = 0;
+    const check = service(async () => { calls++; return response(status === 200 ? {} : { isSanctioned: false }, status); }, { retryDelayMs: 0 });
+    const result = await check({ recipient });
+    assert.equal(result.allowed, false); assert.equal(calls, 1);
+  }
+  let calls = 0;
+  const recovered = await service(async () => {
+    calls++; return calls === 1 ? response({}, 503) : response({ isSanctioned: false });
+  }, { retryDelayMs: 0 })({ recipient });
+  assert.equal(recovered.allowed, true); assert.equal(calls, 2);
+  calls = 0;
+  const failed = await service(async () => { calls++; throw new Error('private upstream failure'); }, { retryDelayMs: 0 })({ recipient });
+  assert.equal(calls, 2); assert.equal(failed.allowed, false);
+  assert.equal(failed.errorCode, 'network-error'); assert.equal(failed.failedRole, 'recipient');
+  calls = 0;
+  const matched = await service(async () => { calls++; return response({ isSanctioned: true }); })({ recipient });
+  assert.equal(matched.allowed, false); assert.equal(calls, 1);
+});
+
 test('timeouts fail closed and logs contain no wallet or credential', async () => {
   const events = [];
   const check = service((_url, { signal }) => new Promise((_, reject) => {

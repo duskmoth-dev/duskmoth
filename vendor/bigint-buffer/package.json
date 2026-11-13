@@ -1,0 +1,10 @@
+{
+  "name": "@duskmoth-dev/safe-bigint-buffer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bounded, pure-JavaScript unsigned BigInt byte conversion; no native bindings.",
+  "license": "MIT",
+  "main": "index.cjs",
+  "exports": "./index.cjs",
+  "engines": { "node": ">=22" }
+}

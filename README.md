@@ -1,45 +1,86 @@
 # Duskmoth
 
-AI-assisted wallet insights and wallet-approved private transaction preparation on Solana.
+[![CI](https://github.com/duskmoth-dev/duskmoth/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/duskmoth-dev/duskmoth/actions/workflows/ci.yml)
 
-**Release status: private review candidate. Stable publication is blocked by dependency security findings.**
-This source snapshot is not an independent audit or a funded end-to-end mainnet verification.
+Source code for the Duskmoth Solana application: wallet-approved private-transfer
+flows, wallet privacy estimates, Moth Pass, AI Pack and Private Payroll.
 
-## Local development
+## What you can build or contribute
 
-Requires Node.js 22+ and pnpm. Install dependencies, copy `.env.example` to `.env`, supply your own provider credentials, then:
+- Inspect the browser-wallet connection, transaction review and recovery flows.
+- Run your own interface with your own Helius, Scorechain and optional Anthropic access.
+- Improve accessibility, wallet compatibility, tests and provider integrations.
+- Fork the source, reproduce a bug and submit a focused pull request.
+
+This application is separate from the [HTTP SDK](https://github.com/duskmoth-dev/duskmoth-sdk).
+The SDK does not sign transactions or execute payments.
+
+## Local setup
+
+Requires Node.js 24+ and pnpm 10.26.1.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile --ignore-scripts
+cp .env.example .env
 pnpm test
 pnpm build
+pnpm test:pass-client
 pnpm start
 ```
 
-Default port: 8787. Routes: `/`, `/app`, `/docs`, and `/api/*`.
-No hosted-workspace service is required. Live transfers are off in the example configuration.
-Scorechain and Helius are required for live transfer readiness; Claude is optional for intent parsing.
-Keys stay server-side. Never configure a server-held wallet private key.
+Open http://localhost:8787. Routes: `/`, `/app`, `/pass`, `/tools`, `/docs`.
+The example configuration deliberately leaves real transfers disabled until your
+own services are configured. Never paste provider credentials into frontend code.
+Do not import another operator's issuer keys or replay databases.
 
-## Transaction model
+For durable Moth Pass storage, provision your own PostgreSQL database, review and
+apply `database/001_moth_pass.sql` using your database tool, then configure
+`DATABASE_URL`, a stable strong `SESSION_SECRET` and the documented storage flags.
+The application does not migrate the database automatically.
+Database integration tests are opt-in and use `TEST_DATABASE_URL`, which must
+point to a disposable development database, never production.
 
-- Shield deposits into a private balance.
-- Withdraw uses an existing private balance without another deposit.
-- Send creates a new deposit before a private payout.
-- The browser wallet approves actions. AI only prepares a reviewable intent.
-- Proofs are generated in the browser using the upstream Privacy Cash SDK.
-- First-time private-pool scans may be slow; progress must remain visible and failed scans must not skip recovered notes.
-- A confirmed deposit is not proof that a recipient payout succeeded. Check each transaction separately.
+## Architecture and feature boundaries
 
-## Limits
+- **Privacy Cash:** browser-side private-balance scans, proof preparation and
+  wallet-approved shielding/withdrawal through the configured relayer.
+- **Helius:** Solana RPC and public-chain activity. Some enriched endpoints
+  require an appropriate provider plan.
+- **Scorechain:** sanctions-only address checks, not full AML or a privacy score.
+- **Anthropic:** optional intent parsing and AI Pack plans. AI does not approve,
+  sign or execute transactions. Do not put secrets in prompts.
+- **Moth Pass:** optional bearer passes issued for verified public $DMOTH burns;
+  core app usage does not require the token. Back up locally stored passes.
+- **Private Payroll:** reviewed sequential withdrawals from an existing private
+  balance. One pass per authorized batch; uncertain payments are not auto-replayed.
+- **MagicBlock:** experimental, separately configured USDC engine. Public execution
+  remains disabled by default and is not represented as general public availability.
 
-Scorechain checks sanctions lists only, not full AML risk. Its provider coverage and commercial terms require separate verification.
-Helius funding-source data may require an upgraded plan. Unknown signals are not proof of safety.
-No app can promise complete anonymity or untraceability. Mainnet uses real funds.
-The waitlist endpoint is unavailable until durable storage and consent handling are implemented.
+Unknown balances, incomplete screening and ambiguous transaction results remain
+explicit errors, not invented approvals or successful payments. A confirmed source
+transaction alone does not prove recipient settlement.
 
-## Community
+## Security and licensing
 
-[Documentation](https://github.com/duskmoth-dev/duskmoth-docs) · [API client](https://github.com/duskmoth-dev/duskmoth-sdk) · [Contribution guide](CONTRIBUTING.md)
+See [SECURITY.md](SECURITY.md), [DEPENDENCY_REVIEW.json](DEPENDENCY_REVIEW.json),
+[RELEASE_STATUS.md](RELEASE_STATUS.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The native bigint-buffer dependency is replaced with an original, bounded
+[JavaScript adapter](vendor/bigint-buffer/README.md), with account-layout regression tests.
+Remaining lower-severity dependency findings are disclosed, not hidden or ignored.
 
-Contact: hello@duskmoth.xyz · [X](https://x.com/duskmoth_app)
+Passing CI is not an independent audit, anonymity guarantee or funded verification
+of every mainnet route. Mainnet transactions spend real funds. This release does
+not change the availability or configuration of the hosted application.
+
+MIT covers original Duskmoth source. Upstream dependencies and third-party visual
+assets retain their own terms; brand marks are not a trademark license.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request.
+Never include credentials, seed phrases, wallet keys or private payment records.
+
+## Links
+
+- App: https://duskmoth.xyz
+- SDK: https://github.com/duskmoth-dev/duskmoth-sdk
+- Documentation: https://github.com/duskmoth-dev/duskmoth-docs
+- X: https://x.com/duskmoth_app
+- Contact: hello@duskmoth.xyz

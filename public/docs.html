@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cedarville+Cursive&family=Inter+Tight:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=moth-pass-nav">
 <link rel="icon" type="image/png" href="assets/img/favicon.png">
 <script>document.documentElement.classList.remove('no-js');</script>
 </head>
@@ -40,6 +40,7 @@
   <a class="pill left" href="/">Home</a>
   <a class="emblem" href="/" aria-label="Duskmoth home" data-emblem></a>
   <div class="right">
+    <a class="pill pass-link" href="/pass">Moth Pass</a>
     <a class="pill hide-sm" href="/app">Open app</a>
     <button class="pill" type="button" data-menu-open aria-expanded="false" aria-controls="menu">Menu</button>
   </div>
@@ -51,6 +52,8 @@
     <a href="/">Home</a>
     <a href="/#manifesto">Field guide</a>
     <a href="/docs">Docs</a>
+    <a href="/pass">Moth Pass</a>
+    <a href="/tools">Tools</a>
     <a href="/app">Open app</a>
   </nav>
   <p class="foot micro mute">Send · Shield · Score</p>
@@ -71,6 +74,7 @@
       <a href="#commands">What you can say</a>
       <a href="#screening">Sanctions screening</a>
       <a href="#score">Privacy score</a>
+      <a href="#moth-pass">Moth Pass</a>
       <p class="grp">Build</p>
       <a href="#api">API reference</a>
       <a href="#self-host">Self-host on mainnet</a>
@@ -203,6 +207,7 @@
         <tbody>
           <tr><td>Private send</td><td><code>send 2 SOL to &lt;address&gt; privately</code></td><td>Shield and pay out right away</td></tr>
           <tr><td>Send later</td><td><code>send 50 USDC to &lt;address&gt; later</code></td><td>Shield now, you choose when to pay out</td></tr>
+          <tr><td>Withdraw</td><td><code>withdraw 0.03 SOL to &lt;address&gt;</code></td><td>Pays out from your private balance only. It never starts a new deposit.</td></tr>
           <tr><td>Shield</td><td><code>shield 1 SOL</code></td><td>Move funds into your private balance</td></tr>
           <tr><td>Private balance</td><td><code>what's my private balance?</code></td><td>Opens your shielded balance</td></tr>
           <tr><td>Privacy score</td><td><code>check my privacy score</code></td><td>Opens the score for your connected wallet</td></tr>
@@ -246,6 +251,52 @@ x-api-key: &lt;SCORECHAIN_API_KEY&gt;</code></pre>
       <p class="callout warn">Helius serves <code>identity</code>, <code>batch-identity</code> and <code>funded-by</code> only on paid plans (free plans get <code>403</code>). On a free key, those signals are skipped.</p>
     </section>
 
+    <!-- MOTH PASS -->
+    <section id="moth-pass" class="doc">
+      <h2>Moth Pass</h2>
+      <p>Moth Pass is an optional way to unlock premium extras. You burn <code>$DMOTH</code> once and receive passes that are blind-signed by the server. Duskmoth works fully without it: sending, shielding, withdrawing and the privacy score never need a pass.</p>
+      <div class="flow">
+        <div><span>1</span><b>Burn</b><p>Your wallet signs one public SPL burn of <code>$DMOTH</code>. The burn is visible on-chain to anyone.</p></div>
+        <div><span>2</span><b>Blind-sign</b><p>Your browser creates random pass messages and blinds them. The server checks the burn and signs the blinded values without seeing the finalized passes (RFC 9474, suite <code>RSABSSA-SHA384-PSS-Randomized</code>). Your browser unblinds and verifies each signature locally.</p></div>
+        <div><span>3</span><b>Spend</b><p>Each premium action spends one pass. The server can verify the signature is genuine and not yet spent, but the blind signature hides which issuance produced it.</p></div>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Feature</th><th>Cost</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Split withdraw</td><td>1 pass</td><td>Available</td></tr>
+          <tr><td>Pre-withdraw privacy check</td><td>Free · no pass</td><td>Available in withdrawal and immediate-send previews</td></tr>
+          <tr><td><a href="/tools#ai-pack">AI Pack</a></td><td>1 pass per successfully generated plan</td><td>Available</td></tr>
+          <tr><td><a href="/tools#payroll">Private Payroll</a></td><td>1 pass per batch, not per recipient</td><td>Available</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Pre-withdraw privacy check</h3>
+      <p>Before confirming a withdrawal or an immediate private send, select <strong>Check withdrawal privacy</strong> in the transaction preview. No signature, token burn, or pass is required. The check reads confirmed Solana mainnet history through Helius and reports address reuse, a return to your connected wallet, shared public activity, recent sender activity, and similar public balance changes.</p>
+      <p>Coverage is limited to the latest 20 address-history entries per address and up to 3 successful sender transactions. It is not a pool-wide analysis; token-account history, older activity, split amounts, network metadata and verified deposit age are not fully covered. Missing data is shown as unknown, never as a successful privacy result. Results are a timestamped snapshot, not an anonymity score, guarantee, sanctions check or instruction to proceed.</p>
+      <p>Your browser sends the two public addresses, token and proposed gross amount to Duskmoth. Helius receives public-history RPC queries. This feature does not persist the request or report, log addresses or amounts, or spend a pass. The optional review never replaces the required balance, fee, address and sanctions checks. AI Pack and Private Payroll are separate paid tools on <a href="/tools">/tools</a>.</p>
+      <h3 id="premium-tools">Premium tools</h3>
+      <p><strong>AI Pack</strong> turns a prompt with explicit recipient addresses and amounts into a structured multi-recipient withdrawal plan. Server validation rejects invented or missing recipients and mismatched amounts. One pass is spent only when a valid plan is successfully generated; a provider or validation failure costs nothing. Generated plans are encrypted on the server and recoverable for 7 days; expired encrypted results are cleared on subsequent ledger access while replay records remain. The recovery credential stays in your browser and is never shown. Your prompt, including public recipient addresses and amounts, is sent to Anthropic to generate the plan; never include wallet secrets.</p>
+      <p><strong>Private Payroll</strong> prepares a SOL or USDC batch of up to 20 recipients from manual lines or CSV (<code>recipient,amount,token</code>), reviews fees and net amounts, then executes sequential withdrawals from your existing private balance after you confirm in your wallet. One pass is spent once per batch, after balance, all-recipient sanctions and fee checks pass, even if the batch is later stopped part-way. Duplicate recipients, mixed tokens and more than 20 recipients are rejected.</p>
+      <p>Payroll recipient lists and receipts are stored locally in this browser for recovery, and the export file contains those associations; treat it as sensitive. Nothing is scheduled, automatic or run in the background. Stop takes effect after the current payment; confirmed rows are never replayed. If a transaction outcome is uncertain, Duskmoth does not offer a resend: reconciliation only reads chain status. A stopped batch must be re-reviewed before it resumes. These tools do not guarantee anonymity.</p>
+      <h3>Stored by the server</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Stored</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Used burn transaction signatures, with an opaque digest of the blinded batch and its count</td><td>So one burn cannot be used twice, and an interrupted claim can be retried with the same blinded batch</td></tr>
+          <tr><td>SHA-256 hashes of spent pass messages, with random retry and grant identifiers</td><td>So one pass cannot be spent twice, and a redeem retry returns the same result</td></tr>
+          <tr><td>Wallet addresses, pass contents, or any link from a burn to a finalized pass</td><td>Not stored</td></tr>
+        </tbody>
+      </table></div>
+      <p class="callout warn">Passes are bearer credits: anyone with the backup file can spend them, and clearing this browser deletes them. Back them up and keep the file private.</p>
+      <ul class="dl">
+        <li>Blind signatures hide the finalized pass contents from the server. They do not hide everything: the burn is public, and timing, network and wallet metadata can still correlate activity. Burn from a different wallet than the one you send with, and wait before spending.</li>
+        <li>Your browser prepares and saves the blinded passes before the burn, so a burn interrupted later (closed tab, rejected claim signature, network error) can be resumed with <b>Resume purchase</b> instead of burning again.</li>
+        <li>In production, Moth Pass is disabled until the host configures the <code>$DMOTH</code> mint, the pass signing key and durable state. The page says which part is missing.</li>
+        <li><code>PASS_STATE_DURABLE=true</code> declares that the signing key and ledger directory sit on genuinely persistent storage with a single writer. Setting the flag does not make ephemeral disk durable: if that storage resets, the key and ledgers are lost, unspent passes become invalid, and used burns could be claimed again. Do not set it until the storage really persists.</li>
+        <li>Development demo passes use a separate issuer key from the mainnet key, so they never work as mainnet passes.</li>
+        <li><b>$DMOTH is not a privacy coin.</b> It is an ordinary SPL token with public transfers.</li>
+      </ul>
+    </section>
+
     <!-- API -->
     <section id="api" class="doc">
       <h2>API reference</h2>
@@ -273,7 +324,7 @@ x-api-key: &lt;SCORECHAIN_API_KEY&gt;</code></pre>
   "action": { "type": "send", "amount": 0.5, "token": "SOL",
               "recipient": "7xKpQm3vHsT9wRb2eYcNf4LdJ8gUaZ5qXr6tPkW1sMn", "delay": "now" }
 }
-// action.type: "send" | "shield" | "balance" | "score" | "help", or action is null when more info is needed</code></pre></div>
+// action.type: "send" | "withdraw" | "shield" | "balance" | "score" | "help", or action is null when more info is needed</code></pre></div>
 
       <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/screen</code></p><p>Screen both parties. Fails closed.</p>
       <pre class="code"><code>// request
@@ -303,6 +354,27 @@ x-api-key: &lt;SCORECHAIN_API_KEY&gt;</code></pre>
              "lastActive": 1793410000, "oldestSampled": 1781000000 },
   "history": [ { "signature": "…", "time": 1793410000, "ok": true, "type": "receive",
                  "sol": 0, "usdc": 25.5, "fee": 0 } ] }</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m get">GET</span><code>/api/pass/info</code></p><p>Moth Pass configuration and the public signing key.</p>
+      <pre class="code"><code>{ "enabled": true, "mint": "&lt;DMOTH_MINT or null&gt;", "price": 50000, "maxPerBurn": 50,
+  "demo": false, "kid": "8251a8cf5e68e1b9", "publicKey": "&lt;SPKI base64&gt;",
+  "suite": "RSABSSA-SHA384-PSS-Randomized",
+  "features": { "split-withdraw": { "cost": 1, "label": "Split withdraw" } } }
+// when disabled: "enabled": false plus a "reason" string</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/pass/issue</code></p><p>Blind-sign passes for a confirmed, recent <code>$DMOTH</code> burn. Each burn can be redeemed once.</p>
+      <pre class="code"><code>// request
+{ "burnSignature": "&lt;base58&gt;", "blinded": [ "&lt;base64&gt;", "…" ] }
+// response
+{ "kid": "8251a8cf5e68e1b9", "count": 2, "signatures": [ "&lt;base64 blind sig&gt;", "…" ], "demo": false }
+// 404 burn not found yet (retry), 409 burn already used, 503 not configured</code></pre></div>
+
+      <div class="endpoint"><p class="ep"><span class="m post">POST</span><code>/api/pass/redeem</code></p><p>Spend one pass for a feature.</p>
+      <pre class="code"><code>// request
+{ "msg": "&lt;base64 prepared&gt;", "sig": "&lt;base64&gt;", "kid": "…", "feature": "split-withdraw" }
+// response
+{ "ok": true, "feature": "split-withdraw", "grant": "&lt;random hex&gt;" }
+// 400 invalid pass or feature, 409 already spent</code></pre></div>
 
       <div class="endpoint"><p class="ep"><span class="m get">GET</span><code>/api/card.svg?score=62&amp;grade=C</code></p><p>Shareable score card (1200×630 SVG). Contains no address.</p></div>
 

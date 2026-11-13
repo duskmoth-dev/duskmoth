@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tools | AI Pack &amp; Private Payroll | Duskmoth</title>
+<meta name="description" content="Duskmoth premium tools: AI Pack builds a multi-recipient withdrawal plan from your explicit prompt, Private Payroll reviews and sends a SOL or USDC batch from your private balance. 1 Moth Pass each.">
+<link rel="canonical" href="https://duskmoth.xyz/tools">
+<meta name="theme-color" content="#030303">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duskmoth">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://duskmoth.xyz/tools">
+<meta property="og:title" content="Tools | AI Pack &amp; Private Payroll | Duskmoth">
+<meta property="og:description" content="Prepare private multi-recipient payments without surrendering control of funds. Wallet-signed, 1 Moth Pass per plan or batch.">
+<meta property="og:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duskmoth wordmark on a dark background framed by vines, flowers, and moths.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@duskmoth_app">
+<meta name="twitter:creator" content="@duskmoth_app">
+<meta name="twitter:title" content="Tools | AI Pack &amp; Private Payroll | Duskmoth">
+<meta name="twitter:description" content="Prepare private multi-recipient payments without surrendering control of funds.">
+<meta name="twitter:image" content="https://duskmoth.xyz/assets/img/brand/duskmoth-link-preview-1200x630.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cedarville+Cursive&family=Inter+Tight:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=moth-pass-nav">
+<link rel="stylesheet" href="assets/css/pass.css">
+<link rel="stylesheet" href="assets/css/tools.css?v=magicblock-mainnet-20261110b">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<script>document.documentElement.classList.remove('no-js');</script>
+</head>
+<body class="pass-body tools-body">
+<canvas id="organic" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<a class="skip" href="#main">Skip to tools</a>
+
+<header class="top">
+  <a class="pill left" href="/app">Open app</a>
+  <a class="emblem" href="/" aria-label="Duskmoth home" data-emblem></a>
+  <div class="right">
+    <a class="pill pass-link hide-sm" href="/pass">Moth Pass</a>
+    <button class="pill" type="button" data-menu-open aria-expanded="false" aria-controls="menu">Menu</button>
+  </div>
+</header>
+
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
+  <button class="pill close" type="button" data-menu-close>Close</button>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/app">App</a>
+    <a href="/docs">Docs</a>
+    <a href="/pass">Moth Pass</a>
+    <a href="/tools" aria-current="page">Tools</a>
+  </nav>
+  <p class="foot micro mute">Send · Shield · Score</p>
+</div>
+
+<main class="pass tools" id="main">
+  <header class="pass-hero tools-hero">
+    <p class="kicker">Moth Pass extras · wallet-controlled</p>
+    <h1 class="pass-title"><span>Night</span> <em>tools</em></h1>
+    <p class="pass-lead">Two optional tools for preparing multiple private payments. You approve the batch and unlock your private balance with your wallet. Nothing runs on a schedule or in the background, and the core app stays free.</p>
+    <nav class="tool-jump three" aria-label="Tools on this page">
+      <a href="#ai-pack"><span>I</span>AI Pack<small>1 pass per generated plan</small></a>
+      <a href="#payroll"><span>II</span>Private Payroll<small>1 pass per batch</small></a>
+      <a href="#magicblock"><span>III</span>MagicBlock USDC<small>Internal mainnet beta</small></a>
+    </nav>
+  </header>
+
+  <section class="panel session" aria-label="Wallet and passes">
+    <div class="session-in" data-session aria-busy="true">
+      <div class="sk"></div><div class="sk short"></div>
+    </div>
+    <div class="pass-msg" data-global-msg role="alert"></div>
+  </section>
+  <p class="sr-only" data-announce role="status" aria-live="polite"></p>
+
+  <section class="panel tool" id="ai-pack" aria-labelledby="ai-h">
+    <div class="panel-head">
+      <h2 id="ai-h"><span class="num">I</span> AI Pack</h2>
+      <span class="cost">1 pass · only on a successful plan</span>
+    </div>
+    <div class="tool-in">
+      <div class="tool-text">
+        <p class="tool-lede">Describe the payments in plain words, with every address and amount written out. The model structures them; it never guesses a recipient or an amount.</p>
+        <ul class="facts">
+          <li>Failed or rejected generation costs nothing.</li>
+          <li>Your encrypted plan can be recovered for 7 days from this browser. Expired server copies are cleared on subsequent ledger access.</li>
+          <li>Your prompt, including public addresses and amounts, is sent to Anthropic. Never enter wallet secrets.</li>
+          <li>A plan is a draft. Using it moves it into Payroll review; nothing is sent.</li>
+        </ul>
+      </div>
+      <form class="ai-form" data-ai-form novalidate>
+        <label for="ai-prompt" class="field-lab">Prompt</label>
+        <textarea id="ai-prompt" rows="6" maxlength="4000" aria-describedby="ai-hint" placeholder="Pay 0.05 SOL to 7xKX...q9Fh and 0.12 SOL to 4hT2...Wm1c"></textarea>
+        <p id="ai-hint" class="hint">Include explicit amounts, one token, and full Solana addresses.</p>
+        <div class="row-actions">
+          <button class="btn primary" type="submit" data-ai-generate>Generate plan · 1 pass</button>
+          <button class="btn" type="button" data-ai-recover>Recover last plan</button>
+        </div>
+      </form>
+      <div class="ai-out" data-ai-out aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel tool" id="payroll" aria-labelledby="pay-h">
+    <div class="panel-head">
+      <h2 id="pay-h"><span class="num">II</span> Private Payroll</h2>
+      <span class="cost">1 pass per batch, not per recipient</span>
+    </div>
+    <div class="tool-in">
+      <div class="tool-text">
+        <p class="tool-lede">Send a SOL or USDC batch of up to 20 recipients from your existing private balance, one relayed withdrawal at a time, after you approve the batch.</p>
+        <ul class="facts">
+          <li>The pass is spent once, after balance, all-recipient sanctions and fee checks pass, even if you later stop part-way.</li>
+          <li>Stop takes effect after the current payment. Confirmed rows are never replayed.</li>
+          <li>An uncertain transaction is never resent. Reconcile reads chain status only.</li>
+        </ul>
+      </div>
+      <div data-payroll aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel tool" id="magicblock" aria-labelledby="mb-h">
+    <div class="panel-head">
+      <h2 id="mb-h"><span class="num">III</span> MagicBlock USDC <span class="mb-beta">Internal beta</span></h2>
+      <span class="cost">Payroll 1 pass · others no pass</span>
+    </div>
+    <div class="tool-in">
+      <div class="tool-text">
+        <p class="tool-lede">Private USDC sends, payroll, deposits and withdrawals through MagicBlock. Internal mainnet beta for allowlisted wallets only; not a public launch.</p>
+        <ul class="facts">
+          <li>Reviews screen recipients and simulate costs. No funds or passes move.</li>
+          <li>Source-confirmed is not paid. A row is confirmed only after settlement is proven.</li>
+          <li>Nothing is resent automatically. Uncertain rows can only be checked.</li>
+          <li>All times are shown in UTC.</li>
+        </ul>
+      </div>
+      <div class="mb-root" data-magicblock aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="pass-notes tools-notes" aria-label="Data retention">
+    <article><p class="kicker">Stored in this browser</p><p>Payroll recipient lists and receipts are kept locally so an interrupted batch can be recovered. Clearing browser data removes them.</p></article>
+    <article><p class="kicker">The backup file</p><p>An exported batch links your wallet to every recipient and amount. Treat it as sensitive. It never contains, and Duskmoth never asks for, private keys.</p></article>
+    <article><p class="kicker">What this is not</p><p>No scheduled, recurring or automatic payments. No anonymity guarantee: amounts, timing and network metadata can still correlate activity.</p></article>
+  </section>
+  <p class="pass-foot micro mute">Details in the <a href="/docs#premium-tools">tools docs</a> · Updates on <a href="https://x.com/duskmoth_app">X @duskmoth_app</a></p>
+</main>
+
+<script src="assets/vendor/gsap.min.js"></script>
+<script type="module" src="assets/js/tools-page.js"></script>
+</body>
+</html>

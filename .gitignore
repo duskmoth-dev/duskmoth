@@ -8,6 +8,5 @@ dist/
 *.zip
 data/
 .DS_Store
-
 /public/circuit2/
 /public/assets/js/live/

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { sdkBrowserPlugin } from '../../live/sdk-browser-plugin.js';
-import { sdkFetch, sdkLog, scanBatch, scanStorage, scanYield, withProgress } from '../../live/src/runtime.js';
+import { sdkFetch, sdkLog, scanBatch, scanStorage, scanYield, withProgress, abortableRead } from '../../live/src/runtime.js';
 
 const require = createRequire(import.meta.url);
 const sdk = path.dirname(require.resolve('privacycash'));
@@ -74,4 +74,23 @@ test('interrupted scans never persist offsets ahead of their recovered notes', (
   retry.setItem('encrypted_outputswallet', '["existing","recovered"]');
   assert.equal(data.get('encrypted_outputswallet'), '["existing","recovered"]');
   assert.equal(data.get('fetch_offsetwallet'), '40000');
+});
+
+test('read cancellation interrupts wallet approval and pool requests and clears the operation signal', async () => {
+  const original = globalThis.fetch;
+  try {
+    let controller = new AbortController();
+    const message = withProgress(null, () => abortableRead(new Promise(() => {})), controller.signal);
+    controller.abort(new Error('Stopped before sending'));
+    await assert.rejects(message, /Stopped before sending/);
+    controller = new AbortController();
+    globalThis.fetch = async (_url, { signal }) => new Promise((_resolve, reject) => {
+      signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+    });
+    const request = withProgress(null, () => sdkFetch('https://offline.invalid/pool'), controller.signal);
+    controller.abort(new Error('Stopped before sending'));
+    await assert.rejects(request, /Stopped before sending/);
+    await withProgress(null, () => scanYield(0, 1)); // Not poisoned by the aborted read.
+    await assert.rejects(withProgress(null, () => scanYield(0, 1), controller.signal), /Stopped before sending/);
+  } finally { globalThis.fetch = original; }
 });

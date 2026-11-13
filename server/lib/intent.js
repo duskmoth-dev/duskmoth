@@ -13,7 +13,7 @@ const T = {
     needAmount: 'How much, and in which token? I support SOL and USDC.',
     tooMuch: (max, tok) => `For now Duskmoth caps a single private send at ${max} ${tok}. Try a smaller amount.`,
     send: (a, t, r) => `Review a private transfer of ${a} ${t} to ${short(r)}, then confirm in your wallet. Privacy is not guaranteed.`,
-    withdraw: (a, t, r) => `Withdraw ${a} ${t} from your existing private balance to ${short(r)}. Review the relayer fees before confirming.`,
+    withdraw: (a, t, r) => `Ready to withdraw ${a} ${t} from your private balance to ${short(r)}. Check the relayer fee and what they receive, then approve.`,
     shield: (a, t) => `I'll shield ${a} ${t} into your private balance. You can send from it later, which makes the link much harder to trace.`,
     score: 'Connect your wallet and sign a short message so I can score your own wallet. I only score wallets you prove you own.',
     balance: 'Opening your shielded balance.',
@@ -25,7 +25,7 @@ const T = {
 export function parseRules(message) {
   const L = T.en;
   const msg = message.trim();
-  const amountMatch = msg.match(/(\d+(?:[.,]\d+)?)\s*(sol|usdc)\b/i);
+  const amountMatch = msg.match(/(?<![\w.+-])(\d+(?:[.,]\d+)?)\s*(sol|usdc)\b/i);
   const amount = amountMatch ? Number(amountMatch[1].replace(',', '.')) : null;
   const token = amountMatch ? amountMatch[2].toUpperCase() : null;
   const recip = (msg.match(BASE58_FIND) || [])[0] || null;
@@ -102,12 +102,15 @@ function anthropic() {
 }
 
 /** Validate a model-proposed action server-side. The model is never trusted with limits or addresses. */
-function validate(action, message) {
+export function validateProposedAction(action, message) {
   if (!action || typeof action !== 'object' || !['send', 'shield', 'withdraw', 'score', 'balance', 'help'].includes(action.type)) return null;
-  const a = { type: action.type };
+  const existingBalance = /\b(withdraw|unshield)\b|from (?:my )?(?:private|shielded) balance/i.test(message);
+  const a = { type: existingBalance && ['send', 'shield'].includes(action.type) ? 'withdraw' : action.type };
   if (['send', 'shield', 'withdraw'].includes(a.type)) {
     if (!TOKENS.includes(action.token)) return null;
-    const amt = Number(action.amount);
+    const amountInMessage = message.match(/(?<![\w.+-])(\d+(?:[.,]\d+)?)\s*(sol|usdc)\b/i);
+    if (!amountInMessage || amountInMessage[2].toUpperCase() !== action.token || Number(amountInMessage[1].replace(',', '.')) !== action.amount) return null;
+    const amt = action.amount;
     if (!(amt > 0) || amt > MAX_AMOUNT[action.token]) return null;
     a.token = action.token;
     a.amount = amt;
@@ -115,7 +118,7 @@ function validate(action, message) {
     if (a.type !== 'shield') {
       if (!isSolanaAddress(action.recipient) || !message.includes(action.recipient)) return null;
       a.recipient = action.recipient;
-      a.delay = action.delay === 'later' ? 'later' : 'now';
+      if (a.type === 'send') a.delay = action.delay === 'later' ? 'later' : 'now';
     }
   }
   return a;
@@ -134,14 +137,19 @@ export async function parseIntent(message) {
     });
     const text = res.content.filter((c) => c.type === 'text').map((c) => c.text).join(' ').trim();
     const tool = res.content.find((c) => c.type === 'tool_use');
-    let action = tool ? validate(tool.input, message) : null;
+    let action = tool ? validateProposedAction(tool.input, message) : null;
     // Existing-private-balance requests must never accidentally make a second deposit.
-    if (action?.type === 'send' && /\b(withdraw|unshield)\b|from (?:my )?(?:private|shielded) balance/i.test(message)) action = { ...action, type: 'withdraw' };
+    if (action?.type === 'send' && /\b(withdraw|unshield)\b|from (?:my )?(?:private|shielded) balance/i.test(message)) {
+      const { delay, ...withdrawal } = action;
+      action = { ...withdrawal, type: 'withdraw' };
+    }
     if (tool && !action) {
       // Model proposed something invalid; fall back to deterministic rules.
       return { ...parseRules(message), engine: 'rules-fallback' };
     }
-    return { reply: text || parseRules(message).reply, action, engine: 'claude' };
+    const canonicalReply = action && ['send', 'shield', 'withdraw'].includes(action.type)
+      ? T.en[action.type](action.amount, action.token, action.recipient) : null;
+    return { reply: canonicalReply || text || parseRules(message).reply, action, engine: 'claude' };
   } catch {
     return { ...parseRules(message), engine: 'rules-fallback' };
   }

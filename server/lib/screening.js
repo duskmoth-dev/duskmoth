@@ -19,7 +19,8 @@ export function parseSanctionsResponse(body) {
 export function createScreening({
   getKey = () => process.env.SCORECHAIN_API_KEY,
   fetchImpl = (...args) => fetch(...args),
-  timeoutMs = 4000,
+  timeoutMs = 6000,
+  retryDelayMs = 250,
   log = (event) => console.warn(JSON.stringify(event)),
 } = {}) {
   return async function screenTransfer({ sender, recipient } = {}) {
@@ -43,30 +44,42 @@ export function createScreening({
       if (!address) continue;
       // Identical sender/recipient needs only one request against the limited free quota.
       if (role === 'sender' && address === recipient) { out.sender = { ...out.recipient }; continue; }
-      let failure = 'unavailable';
+      const requestId = randomUUID();
+      // Read-only retry, at most once per address. Never retry a match,
+      // malformed result, rejected credential or exhausted provider quota.
+      for (let attempt = 0; attempt < 2; attempt++) {
+      let failure = 'network-error', upstreamStatus = null;
+      const signal = AbortSignal.timeout(timeoutMs), started = Date.now();
       try {
         const response = await fetchImpl(`https://sanctions.api.scorechain.com/v1/addresses/${encodeURIComponent(address)}`, {
           headers: { 'x-api-key': getKey(), Accept: 'application/json' },
-          signal: AbortSignal.timeout(timeoutMs),
+          signal,
           redirect: 'error',
         });
         if (!response.ok) {
+          upstreamStatus = response.status;
           failure = response.status === 429 ? 'rate-limited'
-            : [401, 403].includes(response.status) ? 'authentication' : 'unavailable';
+            : [401, 403].includes(response.status) ? 'authentication'
+            : response.status >= 500 ? 'provider-unavailable' : 'provider-rejected';
           throw new Error('provider-error');
         }
         failure = 'invalid-response';
         out[role] = { ...parseSanctionsResponse(await response.json()), checkedAt: new Date().toISOString() };
+        break;
       } catch {
+        if (signal.aborted) failure = 'timeout';
+        const retry = attempt === 0 && ['network-error', 'timeout', 'provider-unavailable'].includes(failure);
         // Never log addresses, response bodies, request URLs, or credentials.
-        const requestId = randomUUID();
-        log({ event: 'sanctions_check_failed', provider: 'scorechain', code: failure, requestId });
+        log({ event: retry ? 'sanctions_check_retry' : 'sanctions_check_failed', provider: 'scorechain',
+          code: failure, role, attempt: attempt + 1, upstreamStatus, durationMs: Date.now() - started, requestId });
+        if (retry) { await new Promise(resolve => setTimeout(resolve, retryDelayMs)); continue; }
         return {
-          ...out, errorCode: failure, requestId,
+          ...out, errorCode: failure, failedRole: role, requestId,
           reason: failure === 'rate-limited'
             ? 'Scorechain request limit reached. Screening is incomplete; not proceeding. Try again later.'
             : 'Scorechain screening could not be completed. Not proceeding. Try again later.',
         };
+      }
       }
     }
     out.allowed = !out.recipient.isSanctioned && !out.sender?.isSanctioned;

@@ -1,8 +1,16 @@
 import { providerAddress } from './wallet.js?mode=real';
 
+// Preference storage is optional. Access inside the session's guarded calls so
+// browsers that deny localStorage do not crash the whole wallet interface.
+export const walletPreferences = {
+  getItem: key => globalThis.localStorage.getItem(key),
+  setItem: (key, value) => globalThis.localStorage.setItem(key, value),
+  removeItem: key => globalThis.localStorage.removeItem(key),
+};
+
 // Persist only the chosen provider name, never a cached identity or signing key.
-export function createWalletSession({ makeWallet, storage, onChange, timeout = 8000 }) {
-  let current = null, revision = 0, cleanup = () => {};
+export function createWalletSession({ makeWallet, storage, onChange, onConnectingChange = () => {}, timeout = 120000 }) {
+  let current = null, revision = 0, pending = null, cleanup = () => {};
   function remember(id) {
     try { if (id) storage.setItem('dm_wallet', id); else storage.removeItem('dm_wallet'); } catch {}
   }
@@ -13,6 +21,8 @@ export function createWalletSession({ makeWallet, storage, onChange, timeout = 8
     revision++;
     cleanup(); cleanup = () => {};
     current = null;
+    pending = null;
+    onConnectingChange(false);
     if (forget) remember(null);
     onChange(null);
   }
@@ -25,6 +35,7 @@ export function createWalletSession({ makeWallet, storage, onChange, timeout = 8
       if (current !== wallet) return;
       try {
         const next = makeWallet(wallet.id);
+        if (!next || next.provider !== provider) throw new Error('Wallet provider changed.');
         next.address = providerAddress(provider, key);
         if (next.address === wallet.address) return;
         revision++;
@@ -41,23 +52,42 @@ export function createWalletSession({ makeWallet, storage, onChange, timeout = 8
     };
     onChange(wallet);
   }
-  async function connect(id, trusted = false) {
+  function connect(id, trusted = false) {
+    if (pending) {
+      if (trusted) return Promise.resolve(false);
+      if (!pending.trusted) {
+        if (pending.id === id) return pending.promise;
+        return Promise.reject(new Error('A wallet connection is already pending. Approve or reject it in your wallet first.'));
+      }
+    }
     const ticket = ++revision;
     const wallet = makeWallet(id);
-    if (!wallet) return false;
-    let timer;
-    try {
-      await Promise.race([
-        wallet.connect(trusted ? { onlyIfTrusted: true } : undefined),
-        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Wallet connection timed out. Open your wallet and try again.')), timeout); }),
-      ]);
-      if (ticket !== revision) return false;
-      adopt(wallet);
-      return true;
-    } catch (error) {
-      if (ticket !== revision || trusted) return false;
-      throw error;
-    } finally { clearTimeout(timer); }
+    if (!wallet) return Promise.resolve(false);
+    const attempt = { id, trusted, ticket, promise: null };
+    pending = attempt;
+    attempt.promise = (async () => {
+      let timer;
+      try {
+        if (!trusted) onConnectingChange(true, id);
+        await Promise.race([
+          wallet.connect(trusted ? { onlyIfTrusted: true } : undefined),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Wallet connection timed out. Open your wallet and try again.')), trusted ? Math.min(timeout, 8000) : timeout); }),
+        ]);
+        if (ticket !== revision) return false;
+        adopt(wallet);
+        return true;
+      } catch (error) {
+        if (ticket !== revision || trusted) return false;
+        throw error;
+      } finally {
+        clearTimeout(timer);
+        if (pending === attempt) {
+          pending = null;
+          if (!trusted) onConnectingChange(false);
+        }
+      }
+    })();
+    return attempt.promise;
   }
   return {
     connect,
@@ -88,6 +118,7 @@ export function createWalletSession({ makeWallet, storage, onChange, timeout = 8
         const address = providerAddress(current.provider);
         if (address !== current.address) {
           const next = makeWallet(current.id);
+          if (!next || next.provider !== current.provider) throw new Error('Wallet provider changed.');
           next.address = address;
           revision++; adopt(next);
         }

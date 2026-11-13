@@ -10,8 +10,17 @@ import { verifyOwnership } from './lib/verify.js';
 import { scoreCardSvg } from './lib/card.js';
 import { walletActivity } from './lib/activity.js';
 import { rateLimiter, isAddress, fetchJson } from './lib/util.js';
+import { apiBudget, rpcBudget } from './lib/rpc-budget.js';
 import { PROD, flags, preflight, status } from './lib/env.js';
 import { rpcUrl } from './lib/activity.js';
+import { createPassService } from './lib/moth-pass.js';
+import { passRouter } from './lib/pass-router.js';
+import { checkWithdrawalPrivacy } from './lib/withdraw-privacy.js';
+import { premiumRouter } from './lib/premium-router.js';
+import { magicblockRouter } from './lib/magicblock-router.js';
+import { magicblockSettings } from './lib/magicblock.js';
+import { MagicblockLedger } from './lib/magicblock-ledger.js';
+import { magicblockExecutionRouter } from './lib/magicblock-execution-router.js';
 
 const pf = preflight();
 pf.warnings.forEach((w) => console.warn(`[duskmoth] warning: ${w}`));
@@ -59,20 +68,40 @@ if (flags.relayerProxy) {
   });
 }
 
-app.use(express.json({ limit: '16kb' }));
+app.use(express.json({ limit: '64kb' }));
 
 // Security headers. Note: no request logging of bodies or addresses, on purpose.
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  if (PROD) res.setHeader('X-Frame-Options', 'DENY');
+  if (PROD && process.env.ALLOW_EMBEDDED_PREVIEW !== 'true') {
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+  }
   if (PROD) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   next();
 });
 
 const api = express.Router();
-api.use(rateLimiter({ capacity: 40, refillPerSec: 0.7 }));
+api.use(apiBudget());
+const passes = createPassService({
+  directory: process.env.PASS_DATA_DIR || path.join(ROOT, 'data'),
+  async rpc(method, params) {
+    const result = await fetchJson(rpcUrl(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    }, 20000);
+    if (!result.ok || result.body?.error) throw new Error('Mainnet RPC unavailable.');
+    return result.body?.result;
+  },
+});
+api.use('/pass', passRouter(passes));
+api.use(premiumRouter(passes));
+const magicblockLedger = new MagicblockLedger();
+api.use('/engines/magicblock', magicblockRouter({ screen: screenTransfer, execution: () => magicblockLedger.health() }));
+api.use('/engines/magicblock/execution', magicblockExecutionRouter({ settings: magicblockSettings(), ledger: magicblockLedger, passes, screen: screenTransfer }));
+process.once('exit', () => { void passes.close(); });
 
 api.get('/health', (req, res) => res.json({ ok: true, ...status() }));
 
@@ -94,6 +123,30 @@ api.post('/screen', async (req, res) => {
   const result = await screenTransfer({ sender, recipient });
   res.set('Cache-Control', 'no-store');
   res.status(result.errorCode === 'invalid-address' ? 400 : result.errorCode ? 503 : 200).json(result);
+});
+
+// Read-only, no pass consumption or retained address-pair records.
+api.post('/privacy/withdraw-check', rateLimiter({ capacity: 6, refillPerSec: 0.1 }), async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const started = Date.now();
+  try {
+    const report = await checkWithdrawalPrivacy(req.body, {
+      async rpc(method, params) {
+        const result = await fetchJson(rpcUrl(), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        }, 8000);
+        if (!result.ok || result.body?.error || !Object.hasOwn(result.body || {}, 'result')) throw new Error('RPC unavailable');
+        return result.body.result;
+      },
+    });
+    console.info(JSON.stringify({ event: 'withdraw_privacy_check', outcome: report.status, durationMs: Date.now() - started }));
+    res.json(report);
+  } catch (error) {
+    const statusCode = error.status === 400 ? 400 : 503;
+    console.warn(JSON.stringify({ event: 'withdraw_privacy_check', outcome: 'unavailable', status: statusCode, durationMs: Date.now() - started }));
+    res.status(statusCode).json({ error: error.status ? error.message : 'Privacy review is unavailable. Retry without changing your transaction.' });
+  }
 });
 
 api.post('/score', async (req, res) => {
@@ -131,7 +184,7 @@ const RPC_ALLOW = new Set([
   'getTokenAccountsByOwner', 'getSignatureStatuses', 'getSignaturesForAddress', 'getTransaction', 'sendTransaction', 'simulateTransaction',
   'getMinimumBalanceForRentExemption', 'getSlot', 'getBlockHeight', 'getFeeForMessage', 'getRecentPrioritizationFees',
 ]);
-api.post('/rpc', async (req, res) => {
+api.post('/rpc', rpcBudget(), async (req, res) => {
   const body = req.body;
   const calls = Array.isArray(body) ? body : [body];
   if (!calls.length || calls.length > 10 || calls.some((c) => !RPC_ALLOW.has(c?.method))) {
@@ -148,9 +201,11 @@ api.post('/rpc', async (req, res) => {
 app.use('/api', api);
 // Pages: make share-preview image URLs absolute (X and Telegram ignore relative og:image).
 const PAGE_REDIRECTS = {
+  '/tools.html': '/tools', '/tools/': '/tools',
   '/index.html': '/', '/index': '/', '/index/': '/', '/index.html/': '/',
   '/app.html': '/app', '/app/': '/app', '/app.html/': '/app',
   '/docs.html': '/docs', '/docs/': '/docs', '/docs.html/': '/docs',
+  '/pass.html': '/pass', '/pass/': '/pass', '/pass.html/': '/pass',
 };
 app.use((req, res, next) => {
   const destination = PAGE_REDIRECTS[req.path];
@@ -159,7 +214,7 @@ app.use((req, res, next) => {
   const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
   return res.redirect(301, destination + query);
 });
-const PAGES = { '/': 'index.html', '/app': 'app.html', '/docs': 'docs.html' };
+const PAGES = { '/': 'index.html', '/app': 'app.html', '/docs': 'docs.html', '/pass': 'pass.html', '/tools': 'tools.html' };
 const pageCache = new Map();
 app.get(Object.keys(PAGES), async (req, res, next) => {
   try {

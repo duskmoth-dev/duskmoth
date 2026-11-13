@@ -11,6 +11,16 @@ export function sdkBrowserPlugin() {
       const file = id.split('?')[0].split(path.sep).join('/');
       if (!file.includes('/privacycash/dist/')) return;
       let output = code;
+      if (file.endsWith('/withdraw.js')) {
+        const debug = "console.log('commitmentsToFetch', commitmentsToFetch);";
+        if (!output.includes(debug)) throw new Error('Privacy SDK withdrawal logging changed; review the browser adaptation.');
+        output = output.replace(debug, '/* Do not log withdrawal commitments or account associations. */');
+      }
+      if (/\/deposit(SPL)?\.js$/.test(file)) {
+        const debug = "console.log('❌ Error reading deposit limit:', error);";
+        if (!output.includes(debug)) throw new Error('Privacy SDK deposit logging changed; review the browser adaptation.');
+        output = output.replace(debug, '/* Report safe phase errors through the caller, not raw SDK payloads. */');
+      }
       if (file.endsWith('/models/utxo.js')) {
         const debug = 'console.log(JSON.stringify(utxoData, null, 2));';
         if (!output.includes(debug)) throw new Error('Privacy SDK note-logging contract changed; review the browser adaptation.');

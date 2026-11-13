@@ -34,7 +34,7 @@ async function step(name, fn) {
 console.log('Duskmoth mainnet preflight\n');
 
 await step('1. Build artifacts', async () => {
-  const need = ['public/circuit2/transaction2.wasm', 'public/circuit2/transaction2.zkey', 'public/assets/js/live/privacy-cash.js', 'public/assets/js/live/light_wasm_hasher_bg.wasm', 'public/assets/js/live/hasher_wasm_simd_bg.wasm'];
+  const need = ['public/circuit2/transaction2.wasm', 'public/circuit2/transaction2.zkey', 'public/assets/js/live/privacy-cash.js', 'public/assets/js/live/moth-pass.js', 'public/assets/js/live/light_wasm_hasher_bg.wasm', 'public/assets/js/live/hasher_wasm_simd_bg.wasm'];
   for (const f of need) fs.existsSync(path.resolve(f)) ? ok(f) : bad(`${f} missing. Run: npm run build`);
 });
 
@@ -47,6 +47,18 @@ await step('2. Solana mainnet RPC', async () => {
   const m = await rpc('getAccountInfo', [USDC, { encoding: 'base64' }]);
   m.json?.result?.value ? ok('USDC mint found') : bad('USDC mint not found');
   if (!process.env.HELIUS_API_KEY) warn('No HELIUS_API_KEY: the public RPC is heavily rate limited. Use a paid RPC for a public launch.');
+});
+
+await step('2b. Optional Moth Pass configuration', async () => {
+  if (!process.env.DMOTH_MINT) return warn('DMOTH_MINT is empty: Moth Pass is disabled; ordinary Duskmoth features do not require it.');
+  const { TOKEN_PROGRAMS } = await import('../server/lib/moth-pass.js');
+  const result = await rpc('getAccountInfo', [process.env.DMOTH_MINT, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
+  const value = result.json?.result?.value, parsed = value?.data?.parsed;
+  if (TOKEN_PROGRAMS.has(value?.owner) && parsed?.type === 'mint' && Number.isInteger(parsed.info?.decimals)) {
+    ok(`$DMOTH mainnet SPL mint found; decimals = ${parsed.info.decimals}`);
+  } else bad('DMOTH_MINT is not a supported mainnet SPL mint.');
+  if (process.env.PASS_STATE_DURABLE !== 'true') warn('Real burns are blocked until the pass key and ledgers use persistent, single-writer storage.');
+  warn('Back up the original pass signing key and both ledgers securely. Lost or reset state can invalidate credits or replay protection.');
 });
 
 await step('3. Privacy Cash relayer', async () => {

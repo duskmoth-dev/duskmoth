@@ -17,12 +17,20 @@ export function ownershipMessage(address, ts) {
   return `Duskmoth: prove I own ${address} to see my privacy score. Timestamp ${ts}. This costs nothing and moves no funds.`;
 }
 
-export function detectWallets() {
-  const w = window;
+export function detectWallets(w = globalThis.window) {
+  if (!w) return [];
   const list = [];
-  if (w.phantom?.solana?.isPhantom) list.push({ id: 'phantom', name: 'Phantom', provider: w.phantom.solana });
-  if (w.solflare?.isSolflare) list.push({ id: 'solflare', name: 'Solflare', provider: w.solflare });
-  if (w.backpack?.isBackpack || w.backpack?.solana) list.push({ id: 'backpack', name: 'Backpack', provider: w.backpack.solana || w.backpack });
+  const usable = p => p && typeof p.connect === 'function';
+  const add = (id, name, candidates) => {
+    const provider = candidates.find(usable);
+    if (provider && !list.some(item => item.provider === provider)) list.push({ id, name, provider });
+  };
+  const alias = w.solana;
+  const phantomAlias = alias?.isPhantom && !alias.isSolflare && !alias.isBackpack
+    && alias !== w.solflare && alias !== w.backpack && alias !== w.backpack?.solana ? alias : null;
+  add('phantom', 'Phantom', [w.phantom?.solana, phantomAlias]);
+  add('solflare', 'Solflare', [w.solflare?.isSolflare ? w.solflare : null, w.solana?.isSolflare ? w.solana : null]);
+  add('backpack', 'Backpack', [w.backpack?.solana, w.backpack?.isBackpack ? w.backpack : null, w.solana?.isBackpack ? w.solana : null]);
   return list;
 }
 
@@ -42,17 +50,28 @@ export class InjectedWallet {
   constructor({ id, name, provider }) { this.id = id; this.name = name; this.provider = provider; this.address = null; this.demo = false; }
   async connect(options) {
     const res = await this.provider.connect(options);
-    this.address = providerAddress(this.provider, res?.publicKey || this.provider.publicKey);
+    // Some mobile providers resolve connect before publishing their live account.
+    // Wait briefly for that state; never trust a returned or cached key alone.
+    const deadline = Date.now() + 1000;
+    const key = res?.publicKey;
+    while ((!this.provider.publicKey || this.provider.isConnected === false || (key && this.provider.publicKey.toString() !== key.toString())) && Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    this.address = providerAddress(this.provider, key || this.provider.publicKey);
     return this.address;
   }
   async disconnect() { try { await this.provider.disconnect(); } catch {} this.address = null; }
   async signMessage(text) {
+    if (typeof this.provider.signMessage !== 'function') throw new Error('This wallet does not support message signing. Use Phantom, Solflare or Backpack to continue.');
     const bytes = new TextEncoder().encode(text);
     const out = await this.provider.signMessage(bytes, 'utf8');
     const sig = out?.signature || out;
     return new Uint8Array(sig);
   }
-  async signTransaction(tx) { return this.provider.signTransaction(tx); }
+  async signTransaction(tx) {
+    if (typeof this.provider.signTransaction !== 'function') throw new Error('This wallet does not support transaction signing. Use Phantom, Solflare or Backpack to continue.');
+    return this.provider.signTransaction(tx);
+  }
 }
 
 export function makeWallet(id) {

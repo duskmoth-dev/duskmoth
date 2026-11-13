@@ -500,3 +500,27 @@ const PAGES = [
 })();
 
 if (ST) addEventListener('load', () => ST.refresh());
+
+/* ---------------- $DMOTH contract copy ---------------- */
+(function contract() {
+  const btn = document.querySelector('[data-ca-copy]');
+  const addr = document.querySelector('[data-ca]');
+  const status = document.querySelector('[data-ca-status]');
+  if (!btn || !addr || !status) return;
+  let t;
+  const say = (text, ok) => { status.textContent = text; status.className = 'micro ca-status ' + (ok ? 'ok' : 'err'); clearTimeout(t); t = setTimeout(() => { status.textContent = ''; }, 5000); };
+  btn.addEventListener('click', async () => {
+    const value = addr.textContent.trim();
+    let ok = false;
+    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(value); ok = true; } } catch (e) { ok = false; }
+    if (!ok) {
+      try {
+        const ta = document.createElement('textarea'); ta.value = value; ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+        ok = document.execCommand('copy'); ta.remove();
+      } catch (e) { ok = false; }
+    }
+    if (ok) say('Address copied.', true);
+    else { const r = document.createRange(); r.selectNodeContents(addr); const s = getSelection(); s.removeAllRanges(); s.addRange(r); say('Copy failed. The address is selected, copy it manually.', false); }
+  });
+})();

@@ -2,8 +2,13 @@ import { initCommon, toast, reduced } from './fx.js';
 import * as api from './api.js?mode=real';
 import { detectWallets, makeWallet, proveOwnership } from './wallet.js?mode=real';
 import { createWalletSession } from './wallet-session.js';
+import { observeWallets, walletHelp, walletConnectionError } from './wallet-discovery.js';
 import { AVATAR_SRC } from './cicada.js';
 import { validateTransfer, withdrawalQuote } from './transfer.js';
+import { addSplitOption } from './split-preview.js';
+import { runSplitWithdrawal } from './split-withdraw.js';
+import { mountWithdrawalPrivacy } from './withdraw-privacy.js';
+import { spendSplitPass } from './pass-spend.js';
 
 const MASCOT = AVATAR_SRC;
 
@@ -18,6 +23,7 @@ const fmt = (n, d = 4) => Number(n).toLocaleString('en-US', { maximumFractionDig
 const state = {
   cfg: null,
   wallet: null,
+  connecting: false,
   publicSol: null,
   shielded: { SOL: null, USDC: null },
   live: null, // lazily loaded live-send module instance
@@ -30,6 +36,7 @@ const walletSession = createWalletSession({
     setItem: (key, value) => localStorage.setItem(key, value),
     removeItem: key => localStorage.removeItem(key),
   },
+  onConnectingChange(connecting) { state.connecting = connecting; renderWallet(); },
   onChange(wallet) {
     state.wallet = wallet;
     state.live = null; state.publicSol = null;
@@ -70,13 +77,13 @@ function addMsg(who, html) {
 function typing() { return addMsg('ai', '<span class="typing" aria-label="Duskmoth is typing"><span></span><span></span><span></span></span>'); }
 
 const CHIPS = [
-  'Send 1 SOL privately',
-  'Shield 2 SOL',
+  'Show my balance',
   'Check my privacy score',
-  'Send 25 USDC later',
-  'Withdraw from my private balance',
+  'Shield 0.1 SOL',
+  'Withdraw 0.1 SOL',
+  'Try a flagged address',
 ];
-const CHIP_LABELS = ['Send 1 SOL privately', 'Shield 2 SOL', 'Check my privacy score', 'Send 25 USDC later', 'Withdraw private balance'];
+const CHIP_LABELS = ['Show my balance', 'Check my privacy score', 'Shield 0.1 SOL', 'Withdraw 0.1 SOL to …', 'Try a flagged address'];
 const chips = $('[data-chips]');
 CHIPS.forEach((c, i) => {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = CHIP_LABELS[i];
@@ -131,15 +138,16 @@ function renderPreview(a) {
   const card = document.createElement('div');
   card.className = 'preview glass';
   card.innerHTML = `
-    <h4>${isWithdrawal ? 'Withdraw from existing private balance' : isSend ? 'Private send' : 'Shield to private balance'}</h4>
+    <h4>${isWithdrawal ? 'Private withdrawal' : isSend ? 'Private send' : 'Shield to private balance'}</h4>
     <div class="amount-big">${fmt(a.amount)} <span style="font-size:20px">${a.token}</span></div>
     <dl class="kv">
       ${isSend ? `<dt>To</dt><dd class="addr" title="${esc(a.recipient)}">${esc(api.short(a.recipient))}</dd>` : ''}
       <dt>Route</dt><dd>Privacy Cash shielded pool</dd>
       <dt>Funding</dt><dd>${isWithdrawal ? 'Existing private balance — no new deposit' : 'Your public wallet'}</dd>
-      ${withdrawalNeeded ? '<dt>Relayer fee</dt><dd data-quote-fee>Loading current fees…</dd><dt>Recipient receives</dt><dd data-quote-receive>Loading…</dd>' : '<dt>Withdrawal</dt><dd>Not requested — funds stay in your private balance</dd>'}
+      ${isWithdrawal ? `<dt>From</dt><dd>Your private balance (${Number.isFinite(state.shielded[a.token]) ? `${fmt(state.shielded[a.token], 9)} ${a.token} known` : 'not loaded yet'})</dd>` : ''}
+      ${withdrawalNeeded ? '<dt data-quote-protocol-label>Protocol fee</dt><dd data-quote-protocol>Loading current fees…</dd><dt>Relayer fee</dt><dd data-quote-fee>Loading current fees…</dd><dt><strong>Recipient receives</strong></dt><dd data-quote-receive style="font-weight:700">Loading…</dd>' : '<dt>Withdrawal</dt><dd>Not requested — funds stay in your private balance</dd>'}
       <dt>Network fee</dt><dd>${isWithdrawal ? 'Included in relayer pricing' : 'Additional; review in your wallet before signing'}</dd>
-      ${isSend ? `<dt>Timing</dt><dd>${a.delay === 'later' ? 'Shield now, send later' : 'Right away'}</dd>` : ''}
+      ${a.type === 'send' ? `<dt>Timing</dt><dd>${a.delay === 'later' ? 'Shield now, send later' : 'Right away'}</dd>` : ''}
     </dl>
     <div class="meter">
       <div class="bar"><i style="width:0%"></i></div>
@@ -160,21 +168,37 @@ function renderPreview(a) {
   const go = $('[data-go]', card);
   let cancelled = false;
   let previewQuote = null;
-  const cancel = () => { cancelled = true; card.querySelectorAll('button').forEach((b) => (b.disabled = true)); card.style.opacity = '.5'; addMsg('sys', 'Cancelled. Nothing was sent.'); };
+  let quoteConfig = null;
+  const selection = { plan: null, quotes: null, info: null };
+  const privacyReview = withdrawalNeeded ? mountWithdrawalPrivacy({
+    card, action: a, sender: walletAtPreview,
+    inactive: () => cancelled || state.busy || !walletAtPreview || state.wallet?.address !== walletAtPreview,
+  }) : null;
+  const updateQuote = q => {
+    privacyReview?.invalidate();
+    $('[data-quote-protocol-label]', card).textContent = `Protocol fee (${fmt(q.rate * 100, 4)}%)`;
+    $('[data-quote-protocol]', card).textContent = `${fmt(Math.max(0, q.fee - q.rent), 9)} ${a.token}`;
+    $('[data-quote-fee]', card).textContent = `${fmt(q.rent, 9)} ${a.token}${selection.plan ? ` · ${selection.plan.length} relayer fees` : ''} (deducted from amount)`;
+    $('[data-quote-receive]', card).textContent = `${fmt(q.receive, 9)} ${a.token}`;
+  };
+  const cancel = () => { cancelled = true; card.querySelectorAll('button,input').forEach((b) => (b.disabled = true)); card.style.opacity = '.5'; addMsg('sys', 'Cancelled. Nothing was sent.'); };
   $('[data-cancel]', card).addEventListener('click', cancel);
 
   const screenTarget = isSend ? a.recipient : state.wallet?.address;
   const screening = screenTarget && walletAtPreview
     ? api.screen({ sender: state.wallet?.address || null, recipient: screenTarget })
     : Promise.resolve({ allowed: false, reason: 'Connect your real wallet before checking its address. Nothing was submitted.' });
-  const quote = withdrawalNeeded ? api.relayerConfig().then(c => withdrawalQuote(a, c)) : Promise.resolve(null);
+  const quote = withdrawalNeeded ? api.relayerConfig().then(c => { quoteConfig = c; return withdrawalQuote(a, c); }) : Promise.resolve(null);
   Promise.all([screening, quote])
     .then(([r, q]) => {
       if (cancelled) return;
       if (q) {
         previewQuote = q;
-        $('[data-quote-fee]', card).textContent = `${fmt(q.fee, 9)} ${a.token} (deducted from amount)`;
-        $('[data-quote-receive]', card).textContent = `${fmt(q.receive, 9)} ${a.token}`;
+        updateQuote(q);
+        if (isWithdrawal) void addSplitOption({
+          action: a, card, config: quoteConfig, baseQuote: q, selection, updateQuote,
+          inactive: () => cancelled || state.busy || state.wallet?.address !== walletAtPreview,
+        });
       }
       if (r.allowed === true && r.source === 'scorechain' && r.scope === 'sanctions-only') {
         check.className = 'check ok';
@@ -206,10 +230,10 @@ function renderPreview(a) {
       return;
     }
     if (state.wallet.address !== walletAtPreview) { toast('Wallet changed. Create a new preview before signing.'); return; }
-    const approved = window.confirm(`${mode === 'withdraw' ? 'Withdraw from your existing private balance' : 'Deposit from your public wallet'}: ${fmt(a.amount, 9)} ${a.token}.${mode === 'send' || mode === 'withdraw' ? ` Recipient: ${a.recipient}. Relayer fees are deducted from this amount.` : ''} Mainnet funds are real. Continue?`);
+    const approved = window.confirm(`${mode === 'withdraw' ? 'Withdraw from your existing private balance' : 'Deposit from your public wallet'}: ${fmt(a.amount, 9)} ${a.token}.${mode === 'send' || mode === 'withdraw' ? ` Recipient: ${a.recipient}. Relayer fees are deducted from this amount.` : ''}${selection.plan ? ` Split into ${selection.plan.length} parts. This spends 1 Moth Pass and pays ${selection.plan.length} relayer fees. Keep this tab open during waits; the pass is not refunded if you stop the run.` : ''} Mainnet funds are real. Continue?`);
     if (!approved) return;
-    card.querySelectorAll('button').forEach((b) => (b.disabled = true));
-    await execute({ ...a, mode, approvedQuote: previewQuote }, card);
+    card.querySelectorAll('button,input').forEach((b) => (b.disabled = true));
+    await execute({ ...a, mode, approvedQuote: previewQuote, splitPlan: selection.plan, splitQuotes: selection.quotes, passInfo: selection.info }, card);
   };
   go.addEventListener('click', () => run(isWithdrawal ? 'withdraw' : isSend ? (a.delay === 'later' ? 'shield-only' : 'send') : 'shield-only'));
   $('[data-later]', card)?.addEventListener('click', () => run('shield-only'));
@@ -220,6 +244,7 @@ async function execute(a, card) {
     addMsg('sys', state.cfg?.transferBlockReason || 'Live transfers are unavailable. Nothing was sent.');
     return;
   }
+  if (a.mode === 'withdraw' && a.splitPlan) { await executeSplit(a, card); return; }
   state.busy = true;
   const isSend = a.mode === 'send';
   const withdrawOnly = a.mode === 'withdraw';
@@ -280,12 +305,19 @@ async function execute(a, card) {
     if (!withdrawOnly) depositSig = await L.shield({ token: a.token, amount: a.amount, onStep: (k) => step(k), onProgress });
     if (isSend || withdrawOnly) {
       const privateBalance = await L.balance(a.token, onProgress);
-      if (!Number.isFinite(privateBalance[a.token]) || privateBalance[a.token] + 1e-12 < a.amount) throw new Error('Private balance is insufficient or not indexed yet. No withdrawal was submitted; check the deposit before retrying.');
+      if (!Number.isFinite(privateBalance[a.token])) throw new Error('Private balance is unavailable. Nothing was withdrawn.');
+      assertCurrentWallet();
+      state.shielded = { ...state.shielded, ...privateBalance };
+      renderWallet();
+      if (privateBalance[a.token] + 1e-12 < a.amount) throw new Error(`Your private balance shows ${privateBalance[a.token]} ${a.token}. Shield first, or open Wallet → Show private balance. Nothing was withdrawn.`);
       const freshScreening = await api.screen({ sender: state.wallet.address, recipient: a.recipient });
       if (!freshScreening.allowed || freshScreening.source !== 'scorechain' || freshScreening.scope !== 'sanctions-only') throw new Error(freshScreening.reason || 'Withdrawal screening incomplete. Deposited funds remain in your private balance.');
       await checkQuote();
       assertCurrentWallet();
       withdrawSig = await L.withdraw({ token: a.token, amount: a.amount, recipient: a.recipient, onStep: (k) => step(withdrawOnly ? k - 1 : k), onProgress });
+      assertCurrentWallet();
+      state.shielded[a.token] = Math.max(0, privateBalance[a.token] - a.amount);
+      renderWallet();
     }
     lis.forEach((li) => { li.classList.remove('active'); li.classList.add('done'); });
     const rec = document.createElement('div');
@@ -296,8 +328,11 @@ async function execute(a, card) {
     addMsg('ai', esc(isSend || withdrawOnly
       ? `Confirmed on-chain: ${fmt(a.amount)} ${a.token} withdrawn before relayer fees to ${api.short(a.recipient)}. Review the transaction links; privacy is not guaranteed.`
       : `Shielded ${fmt(a.amount)} ${a.token}. To use this existing balance without another deposit, choose Withdraw private balance in Wallet.`));
-    try { state.shielded = { ...state.shielded, ...await L.balance(a.token) }; }
-    catch { state.shielded[a.token] = null; addMsg('sys', 'Transaction confirmed, but the updated private balance is unavailable. Do not repeat the transaction just to refresh it.'); }
+    try {
+      const balances = await L.balance(a.token);
+      if (state.wallet === initiatingWallet) state.shielded = { ...state.shielded, ...balances };
+    }
+    catch { if (state.wallet === initiatingWallet) state.shielded[a.token] = null; addMsg('sys', 'Transaction confirmed, but the updated private balance is unavailable. Do not repeat the transaction just to refresh it.'); }
     renderWallet();
     await loadActivity();
   } catch (err) {
@@ -323,6 +358,66 @@ async function execute(a, card) {
   }
 }
 
+async function executeSplit(a, card) {
+  state.busy = true;
+  const wallet = state.wallet;
+  const progress = document.createElement('p'); progress.className = 'transfer-progress'; progress.setAttribute('role', 'status'); progress.setAttribute('aria-live', 'polite');
+  const receipts = document.createElement('div'); receipts.className = 'receipt';
+  const stop = document.createElement('button'); stop.className = 'btn'; stop.type = 'button'; stop.textContent = 'Stop after current part';
+  let cancelled = false, completed = [];
+  stop.addEventListener('click', () => { cancelled = true; stop.disabled = true; stop.textContent = 'Stopping after the current request'; });
+  card.append(progress, receipts, stop);
+  const receipt = item => {
+    const p = document.createElement('p'), link = document.createElement('a');
+    link.href = `https://solscan.io/tx/${encodeURIComponent(item.signature)}`; link.target = '_blank'; link.rel = 'noopener';
+    link.textContent = `Part ${receipts.children.length + 1}: ${fmt(item.amount, 9)} ${a.token} · ${api.short(item.signature)}`;
+    p.append(link); receipts.append(p);
+  };
+  try {
+    validateTransfer(a, state.cfg.limits);
+    const engine = await loadLive();
+    const assertWallet = () => {
+      if (state.wallet !== wallet || wallet.provider?.publicKey?.toString() !== wallet.address || wallet.provider?.isConnected === false) throw new Error('Wallet changed or disconnected. Remaining withdrawals were stopped.');
+    };
+    assertWallet();
+    const currentInfo = await api.passInfo();
+    if (!currentInfo.enabled || currentInfo.kid !== a.passInfo?.kid || currentInfo.demo !== a.passInfo?.demo) throw new Error('Moth Pass configuration changed. Review a new preview.');
+    completed = await runSplitWithdrawal({
+      action: a, plan: a.splitPlan, approvedQuotes: a.splitQuotes, engine, assertWallet,
+      screen: () => api.screen({ sender: wallet.address, recipient: a.recipient }),
+      config: api.relayerConfig, spend: () => spendSplitPass(currentInfo), cancelled: () => cancelled,
+      onStatus: text => { progress.textContent = text; },
+      onBalance(balance) { if (state.wallet === wallet) { state.shielded[a.token] = balance; renderWallet(); } },
+      onConfirmed(item, done) {
+        completed = [...done]; receipt(item);
+        if (state.wallet === wallet) {
+          if (Number.isFinite(state.shielded[a.token])) state.shielded[a.token] = Math.max(0, (Math.round(state.shielded[a.token] * (a.token === 'SOL' ? 1e9 : 1e6)) - Math.round(item.amount * (a.token === 'SOL' ? 1e9 : 1e6))) / (a.token === 'SOL' ? 1e9 : 1e6));
+          renderWallet();
+        }
+      },
+    });
+    progress.textContent = `Done. ${fmt(a.amount, 9)} ${a.token} left your private balance for ${api.short(a.recipient)} in ${completed.length} parts. Fees were taken from the amount.`;
+    addMsg('ai', esc('Split withdrawal confirmed. Paid by the relayer; verify each transaction above. Privacy is not guaranteed.'));
+  } catch (error) {
+    completed = error.completed || completed;
+    const done = completed.reduce((sum, item) => sum + item.amount, 0);
+    progress.textContent = `Stopped: ${error.message || 'The operation could not complete.'}${done ? ` ${fmt(done, 9)} ${a.token} was already withdrawn before fees; funds not withdrawn remain in your private balance.` : ''}`;
+    if (error.submittedSignature) {
+      const link = document.createElement('a'); link.href = `https://solscan.io/tx/${encodeURIComponent(error.submittedSignature)}`; link.target = '_blank'; link.rel = 'noopener'; link.textContent = 'Check the pending withdrawal before retrying'; receipts.append(link);
+      progress.textContent += ' Another withdrawal may already be submitted. Its result is unknown; check the link before retrying.';
+    }
+  } finally {
+    stop.disabled = true; state.busy = false;
+    if (state.wallet === wallet && completed.length) {
+      try { state.shielded = { ...state.shielded, ...await (await loadLive()).balance(a.token) }; } catch { state.shielded[a.token] = null; }
+      renderWallet(); void loadActivity();
+    }
+  }
+}
+addEventListener('beforeunload', event => {
+  if (state.busy) { event.preventDefault(); event.returnValue = ''; }
+});
+
 async function loadLive() {
   if (state.live) return state.live;
   const wallet = state.wallet;
@@ -343,17 +438,20 @@ function renderWallet() {
   pill.title = state.wallet ? `${state.wallet.name}: ${state.wallet.address}` : 'Connect wallet';
   pill.setAttribute('aria-label', state.wallet ? `Connected ${state.wallet.name} wallet. Open wallet details` : 'Connect wallet');
   if (!state.wallet) {
-    pill.textContent = 'Connect wallet';
+    pill.textContent = state.connecting ? 'Connecting…' : 'Connect wallet';
     const found = detectWallets();
     walletEl.innerHTML = `
       <p class="micro mute" style="margin:0">Choose a wallet. Duskmoth only asks for signatures, never your keys.</p>
       <div class="wallet-list">
-        ${found.map((w) => `<button class="btn" type="button" data-connect="${w.id}"><span>${w.name}</span><span class="micro mute">Detected</span></button>`).join('')}
-        ${found.length ? '' : '<p class="micro mute" style="margin:4px 0">No wallet extension found. Install Phantom, Solflare or Backpack. No demo wallet is available.</p>'}
+        ${found.map((w) => `<button class="btn" type="button" data-connect="${w.id}" ${state.connecting ? 'disabled' : ''}><span>${w.name}</span><span class="micro mute">${state.connecting ? 'Approve in wallet' : 'Connect'}</span></button>`).join('')}
+        ${found.length ? '' : '<p class="micro mute" style="margin:4px 0">No Solana wallet detected in this browser.</p>'}
       </div>`;
+    walletEl.setAttribute('aria-busy', String(state.connecting));
+    if (!found.length) walletEl.append(walletHelp());
     walletEl.querySelectorAll('[data-connect]').forEach((b) => b.addEventListener('click', () => connect(b.dataset.connect)));
     return;
   }
+  walletEl.setAttribute('aria-busy', 'false');
   const w = state.wallet;
   pill.textContent = api.short(w.address);
   const A = state.activity;
@@ -488,7 +586,7 @@ async function connect(id) {
     if (await walletSession.connect(id)) toast(`Connected ${api.short(state.wallet.address)}`);
     else toast('That wallet is not available in this browser.');
   } catch (e) {
-    toast(e?.message?.includes('rejected') ? 'Connection rejected.' : 'Could not connect the wallet.');
+    toast(walletConnectionError(e));
   }
 }
 async function disconnect() {
@@ -595,7 +693,7 @@ function drawCard(s) {
   g.fillStyle = '#6f6d68'; g.font = '400 20px "Inter Tight", Arial, sans-serif'; g.fillText('HOW LOUD IS YOUR WALLET?', 614, 570);
   return c;
 }
-function shareText(s) { return `My wallet's privacy score is ${s.score}/100 (grade ${s.grade}). How loud is yours? Checked with @duskmoth`; }
+function shareText(s) { return `My wallet's privacy score is ${s.score}/100 (grade ${s.grade}). How loud is yours? Checked with @duskmoth_app`; }
 function openShare(s) {
   const c = drawCard(s);
   const url = c.toDataURL('image/png');
@@ -618,6 +716,9 @@ $('[data-share-x]').addEventListener('click', () => {
 /* =============== boot =============== */
 (async function boot() {
   renderWallet(); renderScoreIdle();
+  observeWallets(() => {
+    if (!state.wallet && !state.connecting) { renderWallet(); void walletSession.restore({ waitMs: 0 }); }
+  });
   const restoring = walletSession.restore();
   const greet = addMsg('ai', esc("Evening. Tell me what to move and to whom, in plain words. I'll show you a preview, screen both addresses, and nothing happens until you sign in your own wallet."));
   try { state.cfg = await api.config(); }

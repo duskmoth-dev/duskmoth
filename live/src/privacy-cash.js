@@ -5,7 +5,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { WasmFactory } from '@lightprotocol/hasher.rs';
 import { deposit, withdraw, depositSPL, withdrawSPL, EncryptionService, getUtxos, getBalanceFromUtxos, getUtxosSPL, getBalanceFromUtxosSPL, setLogger } from 'privacycash/utils';
-import { report, scanStorage, sdkLog, withProgress } from './runtime.js';
+import { report, scanStorage, sdkLog, withProgress, operationSignal, checkReadSignal, abortableRead } from './runtime.js';
 
 // The SDK's default debug logger prints UTXO and encryption details. Never expose those in browser logs.
 setLogger(sdkLog);
@@ -20,7 +20,7 @@ export async function createLive({ rpcUrl, wallet }) {
   const connection = new Connection(rpcUrl, {
     commitment: 'confirmed',
     disableRetryOnRateLimit: true,
-    fetch: (url, options) => fetch(url, { ...options, signal: AbortSignal.timeout(20000) }),
+    fetch: (url, options) => fetch(url, { ...options, signal: AbortSignal.any([AbortSignal.timeout(20000), options?.signal, operationSignal()].filter(Boolean)) }),
   });
   const publicKey = new PublicKey(wallet.address);
   const lightWasm = await WasmFactory.getInstance();
@@ -34,10 +34,11 @@ export async function createLive({ rpcUrl, wallet }) {
     if (encryptionService) return encryptionService;
     report('unlock', 'Approve the “Privacy Money account sign in” message in your wallet. This message does not move funds.');
     let timer;
-    const sig = await Promise.race([
+    const sig = await abortableRead(Promise.race([
       wallet.signMessage(SIGN_MESSAGE),
       new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Wallet message approval timed out. Close the pending wallet request before trying again. No deposit was signed.')), 90000); }),
-    ]).finally(() => clearTimeout(timer));
+    ])).finally(() => clearTimeout(timer));
+    checkReadSignal();
     assertWallet();
     encryptionService = new EncryptionService();
     encryptionService.deriveEncryptionKeyFromSignature(sig);
@@ -121,22 +122,24 @@ export async function createLive({ rpcUrl, wallet }) {
       return signature;
       });
     },
-    async balance(token, onProgress) {
+    async balance(token, onProgress, { signal } = {}) {
       return withProgress(onProgress, async () => {
       const common = await base();
+      report('scan', 'Reading private pool history. First-time scans can take several minutes. No new payment or pass is submitted during this scan.');
       const balances = {};
       if (!token || token === 'SOL') {
-        const sol = getBalanceFromUtxos(await getUtxos({ ...common }));
+        const sol = getBalanceFromUtxos(await getUtxos({ ...common, abortSignal: signal }));
         if (!Number.isFinite(sol?.lamports)) throw new Error('Private SOL balance could not be verified.');
         balances.SOL = sol.lamports / 1e9;
       }
       if (!token || token === 'USDC') {
-        const usdc = getBalanceFromUtxosSPL(await getUtxosSPL({ ...common, mintAddress: USDC_MINT })).amount;
+        const usdc = getBalanceFromUtxosSPL(await getUtxosSPL({ ...common, mintAddress: USDC_MINT, abortSignal: signal })).amount;
         if (!Number.isFinite(usdc)) throw new Error('Private USDC balance could not be verified.');
         balances.USDC = usdc;
       }
+      checkReadSignal();
       return balances;
-      });
+      }, signal);
     },
   };
 }

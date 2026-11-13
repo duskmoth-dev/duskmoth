@@ -1,5 +1,20 @@
 // Only public phase names/counters reach the UI. Never forward SDK log payloads.
 let listener = () => {};
+let activeSignal;
+export const operationSignal = () => activeSignal;
+export function checkReadSignal() { activeSignal?.throwIfAborted(); }
+// Cancellation is used only for read-only balance preparation, never to race a
+// submitted withdrawal or release its recovery lock before the outcome is known.
+export function abortableRead(promise) {
+  const signal = activeSignal;
+  if (!signal) return promise;
+  signal.throwIfAborted();
+  return new Promise((resolve, reject) => {
+    const aborted = () => reject(signal.reason);
+    signal.addEventListener('abort', aborted, { once: true });
+    Promise.resolve(promise).then(resolve, reject).finally(() => signal.removeEventListener('abort', aborted));
+  });
+}
 let scanContext = null;
 // SDK pagination writes its offset before finishing the scan. A failed scan must
 // not skip discovered notes next time: persist the offset only after the note cache.
@@ -20,15 +35,18 @@ export function scanStorage(storage) {
   };
 }
 export function report(phase, detail = '') { listener({ phase, detail }); }
-export async function withProgress(onProgress, operation) {
+export async function withProgress(onProgress, operation, signal) {
   const previous = listener;
+  const previousSignal = activeSignal;
   listener = onProgress || (() => {});
-  try { return await operation(); } finally { listener = previous; }
+  activeSignal = signal;
+  try { checkReadSignal(); return await operation(); } finally { listener = previous; activeSignal = previousSignal; }
 }
 export async function sdkFetch(url, options = {}) {
+  checkReadSignal();
   let response;
-  try { response = await fetch(url, { ...options, signal: options.signal || AbortSignal.timeout(45000) }); }
-  catch { throw new Error('Privacy service request timed out or could not connect. Check your balance and transaction history before retrying.'); }
+  try { response = await fetch(url, { ...options, signal: AbortSignal.any([AbortSignal.timeout(45000), options.signal, activeSignal].filter(Boolean)) }); }
+  catch { checkReadSignal(); throw new Error('Privacy service request timed out or could not connect. Check your balance and transaction history before retrying.'); }
   if (!response.ok) throw new Error(`Privacy service request failed (${response.status}). Check your balance before retrying.`);
   return response;
 }
@@ -37,6 +55,7 @@ export function scanBatch(data) {
     ? { start: data.start, total: data.total } : null;
 }
 export async function scanYield(processed, total) {
+  checkReadSignal();
   const position = scanContext ? Math.min(scanContext.start + processed, scanContext.total) : processed;
   const count = scanContext?.total ?? total;
   report('scan', `Checking pool records: ${position.toLocaleString('en-US')} of ${count.toLocaleString('en-US')}. First-time scans can take several minutes.`);

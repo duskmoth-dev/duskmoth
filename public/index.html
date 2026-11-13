@@ -31,7 +31,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cedarville+Cursive&family=Inter+Tight:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=moth-ca-1">
 <link rel="icon" type="image/png" href="assets/img/favicon.png">
 <script>document.documentElement.classList.remove('no-js');</script>
 </head>
@@ -50,6 +50,7 @@
   <a class="pill left" href="/app">Open app</a>
   <a class="emblem" href="#top" aria-label="Duskmoth home" data-emblem></a>
   <div class="right">
+    <a class="pill pass-link" href="/pass">Moth Pass</a>
     <a class="pill hide-sm" href="/app#score">Privacy score</a>
     <button class="pill" type="button" data-menu-open aria-expanded="false" aria-controls="menu">Menu</button>
   </div>
@@ -63,6 +64,8 @@
     <a href="#principles">Principles</a>
     <a href="#manifesto">Field guide</a>
     <a href="/docs">Docs</a>
+    <a href="/pass">Moth Pass</a>
+    <a href="/tools">Tools</a>
     <a href="#portal">Join</a>
     <a href="/app">Open app</a>
   </nav>
@@ -84,6 +87,15 @@
       <div class="cta" data-hero-sub>
         <a class="pill solid" href="/app">Open app</a>
         <a class="pill" href="/app#score">How loud is my wallet?</a>
+      </div>
+      <div class="ca" role="group" aria-labelledby="ca-label">
+        <p class="micro ca-label" id="ca-label">$DMOTH official contract <span class="mute">· Solana</span></p>
+        <code class="ca-addr" data-ca>9ueEeBuYUc9X1GrNCyWHbKGnHJq1kaD2nvDapDsMpump</code>
+        <div class="ca-actions">
+          <button type="button" class="pill ca-btn" data-ca-copy>Copy address</button>
+          <a class="pill ca-btn" href="https://solscan.io/token/9ueEeBuYUc9X1GrNCyWHbKGnHJq1kaD2nvDapDsMpump" target="_blank" rel="noopener noreferrer">View on Solscan<span class="sr-only"> (opens in a new tab)</span></a>
+        </div>
+        <p class="micro ca-status" role="status" aria-live="polite" data-ca-status></p>
       </div>
     </div>
     <div class="scroll-hint micro mute" aria-hidden="true">Scroll<i></i></div>
@@ -258,6 +270,6 @@
 <script src="assets/vendor/gsap.min.js"></script>
 <script src="assets/vendor/ScrollTrigger.min.js"></script>
 <script src="assets/vendor/lenis.min.js"></script>
-<script type="module" src="assets/js/landing.js?mode=real"></script>
+<script type="module" src="assets/js/landing.js?mode=real&v=ca-1"></script>
 </body>
 </html>
