@@ -26,7 +26,7 @@
     "@cloudflare/blindrsa-ts": "0.4.6",
     "@lightprotocol/hasher.rs": "0.2.1",
     "@magicblock-labs/ephemeral-rollups-sdk": "0.17.3",
-    "@solana/web3.js": "1.99.0",
+    "@solana/web3.js": "3.2.0",
     "bs58": "6.0.0",
     "dotenv": "18.0.9",
     "express": "5.3.0",
